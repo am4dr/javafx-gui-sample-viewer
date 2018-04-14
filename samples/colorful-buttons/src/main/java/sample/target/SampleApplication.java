@@ -6,7 +6,7 @@ import com.gihtub.am4dr.javafx.sample_viewer.sample.NameBasedSample;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class SampleApplication extends Launcher {
+public final class SampleApplication extends Launcher {
 
     @Override
     public void start(Stage stage) {

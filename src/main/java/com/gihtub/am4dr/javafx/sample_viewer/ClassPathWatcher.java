@@ -28,7 +28,8 @@ public final class ClassPathWatcher extends URLClassLoader {
         this(List.of());
     }
     public ClassPathWatcher(List<Path> paths) {
-        super(paths.stream().map(uncheckedFunction(path -> path.toUri().toURL())).toArray(URL[]::new));
+        super(new URL[0]);
+        paths.stream().map(uncheckedFunction(path -> path.toUri().toURL())).forEach(this::addURL);
         try {
             watchService = FileSystems.getDefault().newWatchService();
             take(watchService);
@@ -71,25 +72,37 @@ public final class ClassPathWatcher extends URLClassLoader {
 
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
-        if (findLoadedClass(name) != null) {
-            return super.loadClass(name);
-        }
-        final Class<?> aClass = super.loadClass(name);
-        if (aClass.getClassLoader() == this) {
-            try {
-                final Path path = Paths.get(aClass.getProtectionDomain().getCodeSource().getLocation().toURI())
-                        .resolve(aClass.getName().replace(".", "/") + ".class")
-                        .toRealPath();
-                final Path parent = path.getParent();
-                if (!paths.contains(parent)) {
-                    paths.add(parent);
-                    parent.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
-                }
-            } catch (URISyntaxException | IOException e) {
-                e.printStackTrace();
+        synchronized (getClassLoadingLock(name)) {
+            if (findLoadedClass(name) != null) {
+                return super.loadClass(name);
             }
+            Class<?> aClass = findClassOrNull(name);
+            if (aClass == null) {
+                aClass = super.loadClass(name);
+            }
+            if (aClass.getClassLoader() == this) {
+                try {
+                    final Path path = Paths.get(aClass.getProtectionDomain().getCodeSource().getLocation().toURI())
+                            .resolve(aClass.getName().replace(".", "/") + ".class")
+                            .toRealPath();
+                    final Path parent = path.getParent();
+                    if (!paths.contains(parent)) {
+                        paths.add(parent);
+                        parent.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                    }
+                } catch (URISyntaxException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return aClass;
         }
-        return aClass;
+    }
+    private Class<?> findClassOrNull(String name) {
+        try {
+            return findClass(name);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
     }
 
     public Flow.Publisher<Path> getChangePublisher() {
