@@ -1,7 +1,7 @@
 package com.gihtub.am4dr.javafx.sample_viewer.example;
 
 import com.gihtub.am4dr.javafx.sample_viewer.ClassPathWatcher;
-import com.gihtub.am4dr.javafx.sample_viewer.Launcher;
+import com.gihtub.am4dr.javafx.sample_viewer.SampleApplicationSupport;
 import com.gihtub.am4dr.javafx.sample_viewer.SampleViewer;
 import com.gihtub.am4dr.javafx.sample_viewer.sample.ClassBasedSample;
 import com.gihtub.am4dr.javafx.sample_viewer.sample.NameBasedSample;
@@ -11,7 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
-public final class ControlSamples extends Launcher {
+public final class ControlSamples extends SampleApplicationSupport {
 
     @Override
     public void start(Stage stage) {

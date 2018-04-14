@@ -1,12 +1,12 @@
 package sample.target;
 
-import com.gihtub.am4dr.javafx.sample_viewer.Launcher;
+import com.gihtub.am4dr.javafx.sample_viewer.SampleApplicationSupport;
 import com.gihtub.am4dr.javafx.sample_viewer.SampleViewer;
 import com.gihtub.am4dr.javafx.sample_viewer.sample.NameBasedSample;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public final class SampleApplication extends Launcher {
+public final class SampleApplication extends SampleApplicationSupport {
 
     @Override
     public void start(Stage stage) {

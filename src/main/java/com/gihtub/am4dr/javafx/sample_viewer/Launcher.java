@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedFunction.uncheckedFunction;
 
-public abstract class Launcher extends Application {
+public class Launcher {
 
     public static void main(String[] args) throws ClassNotFoundException {
         if (args.length < 1) {
@@ -22,16 +22,5 @@ public abstract class Launcher extends Application {
         final ClassPathWatcher classLoader = new ClassPathWatcher(paths.stream().map(Paths::get).map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList()));
         final Class<?> aClass = classLoader.loadClass(targetFQCN);
         Application.launch((Class<? extends Application>) aClass, "--path="+String.join(File.pathSeparator, paths));
-    }
-
-    protected List<Path> paths;
-    @Override
-    public void init() throws Exception {
-        super.init();
-        paths = Arrays.stream(getParameters().getNamed().get("path").split(File.pathSeparator))
-                .map(Paths::get).distinct().collect(Collectors.toList());
-    }
-    protected ClassPathWatcher createWatcher() {
-        return new ClassPathWatcher(paths);
     }
 }
