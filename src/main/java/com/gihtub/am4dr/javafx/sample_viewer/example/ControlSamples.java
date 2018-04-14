@@ -19,8 +19,8 @@ public final class ControlSamples extends SampleApplicationSupport {
     }
 
     private void addSamples(SampleViewer viewer) {
-        viewer.addSample(new SimpleSample<>("empty SampleViewer.View", new SampleViewer.View()));
-        viewer.addSample(new UpdateAwareSample<>("SampleViewerSample by Class<T> class", SampleViewerSample.class, this::createWatcher));
-        viewer.addSample(new UpdateAwareSample<>("SampleViewerSample by class name", SampleViewerSample.class.getName(), this::createWatcher));
+        viewer.addSample("empty SampleViewer.View", new SimpleSample<>(new SampleViewer.View()));
+        viewer.addSample("SampleViewerSample by Class<T> class", new UpdateAwareSample<>(this::createWatcher, SampleViewerSample.class));
+        viewer.addSample("SampleViewerSample by class name", new UpdateAwareSample<>(this::createWatcher, SampleViewerSample.class.getName()));
     }
 }

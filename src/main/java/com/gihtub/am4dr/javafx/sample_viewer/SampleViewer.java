@@ -1,5 +1,6 @@
 package com.gihtub.am4dr.javafx.sample_viewer;
 
+import com.gihtub.am4dr.javafx.sample_viewer.sample.Sample;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleListProperty;
@@ -26,8 +27,8 @@ public final class SampleViewer {
         view.titles.bind(samples.titles);
     }
 
-    public <R extends Node> void addSample(Sample<R> sample) {
-        samples.addSample(sample);
+    public <R extends Node> void addSample(String title, Sample<R> sample) {
+        samples.addSample(title, sample);
     }
 
     public View getView() {

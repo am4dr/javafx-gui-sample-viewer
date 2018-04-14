@@ -9,7 +9,7 @@ public final class SampleViewerSample extends VBox {
 
     public SampleViewerSample() {
         final var viewer = new SampleViewer();
-        viewer.addSample(new SimpleSample<>("title 1", new VBox() {{
+        viewer.addSample("title 1", new SimpleSample<>(new VBox() {{
             setBorder(new Border(new BorderStroke(Color.RED, BorderStrokeStyle.DASHED, new CornerRadii(4.0), new BorderWidths(2.0))));
         }}));
         final SampleViewer.View view = viewer.getView();

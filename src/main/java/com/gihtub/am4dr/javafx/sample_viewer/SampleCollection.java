@@ -1,5 +1,6 @@
 package com.gihtub.am4dr.javafx.sample_viewer;
 
+import com.gihtub.am4dr.javafx.sample_viewer.sample.Sample;
 import javafx.beans.Observable;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyProperty;
@@ -18,27 +19,38 @@ public final class SampleCollection {
     public final ReadOnlyObjectProperty<Sample<?>> selected = new SimpleObjectProperty<>();
     public final ReadOnlyObjectProperty<Node> selectedNode = new SimpleObjectProperty<>();
 
-    private final ObservableList<Sample<?>> samples = observableArrayList();
+    private final ObservableList<Entry> entries = observableArrayList();
 
     public SampleCollection() {
         selected.addListener((o, old, now) -> ((SimpleObjectProperty<Node>)selectedNode).bind(now.nodeProperty()));
-        samples.addListener((Observable o) -> {
-            ((SimpleListProperty<String>)titles).setAll(samples.stream().map(it -> it.title).collect(Collectors.toList()));
-            if (samples.size() == 1) {
+        entries.addListener((Observable o) -> {
+            ((SimpleListProperty<String>)titles).setAll(entries.stream().map(it -> it.title).collect(Collectors.toList()));
+            if (entries.size() == 1) {
                 select(0);
             }
         });
     }
 
-    public <R extends Node> void addSample(Sample<R> sample) {
+    public <R extends Node> void addSample(String title, Sample<R> sample) {
         if (sample.getNode() != null) {
-            samples.add(sample);
+            entries.add(new Entry(title, sample));
         }
     }
 
     public void select(int i) {
-        if (i >= 0 && i < samples.size()) {
-            ((SimpleObjectProperty<Sample<?>>)selected).set(samples.get(i));
+        if (i >= 0 && i < entries.size()) {
+            ((SimpleObjectProperty<Sample<?>>)selected).set(entries.get(i).sample);
+        }
+    }
+
+    private static class Entry {
+
+        public final String title;
+        public final Sample<?> sample;
+
+        private Entry(String title, Sample<?> sample) {
+            this.title = title;
+            this.sample = sample;
         }
     }
 }
