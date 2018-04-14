@@ -1,0 +1,94 @@
+plugins {
+    id 'application'
+    id 'java-library'
+    id 'maven'
+
+    id 'com.github.ben-manes.versions' version '0.17.0'
+    id 'com.jfrog.bintray' version '1.8.0'
+}
+
+repositories {
+    jcenter()
+}
+
+group = 'com.github.am4dr'
+version = '0.1.0-SNAPSHOT'
+
+ext {
+    jdkVersion = JavaVersion.VERSION_1_10
+    junit_version = '5.1.1'
+    libraries = [
+            'junit_api': 'org.junit.jupiter:junit-jupiter-api:'+junit_version,
+            'junit_runtime': 'org.junit.jupiter:junit-jupiter-engine:'+junit_version,
+    ]
+    samples = ['colorful-buttons'].collect { project ":$it" }
+}
+
+dependencies {
+    testImplementation libraries.junit_api
+    testRuntime libraries.junit_runtime
+}
+test {
+    useJUnitPlatform()
+}
+
+configure(samples) {
+    apply plugin: 'java-library'
+    sourceCompatibility = jdkVersion
+
+    dependencies {
+        api project(':')
+    }
+}
+sourceSets {
+    target
+}
+
+mainClassName = 'com.gihtub.am4dr.javafx.sample_viewer.Launcher'
+run {
+    dependsOn(':compileTargetJava')
+    args = ["com.gihtub.am4dr.javafx.sample_viewer.example.ControlSamples", "build/classes/java/target"]
+}
+
+javadoc {
+    options {
+        links 'https://docs.gradle.org/4.6/javadoc'
+        links 'https://docs.oracle.com/javase/9/docs/api'
+        locale 'en_US'
+        addBooleanOption('html5', true)
+    }
+}
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+}
+configurations {
+    jarForBintrayUpload
+}
+artifacts {
+    jarForBintrayUpload jar
+    jarForBintrayUpload sourceJar
+    jarForBintrayUpload javadocJar
+}
+bintray {
+    user = bintrayUsername
+    key = bintrayApiKey
+    pkg {
+        repo = 'maven'
+        name = 'javafx-gui-sample-viewer'
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/am4dr/javafx-gui-sample-viewer.git'
+        websiteUrl = 'https://github.com/am4dr/javafx-gui-sample-viewer'
+        githubRepo = 'am4dr/javafx-gui-sample-viewer'
+        version {
+            name = project.version
+            vcsTag = project.version
+            released  = new Date()
+        }
+    }
+    configurations = ['jarForBintrayUpload']
+}
