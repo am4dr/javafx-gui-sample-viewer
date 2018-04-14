@@ -2,7 +2,7 @@ package sample.target;
 
 import com.gihtub.am4dr.javafx.sample_viewer.SampleApplicationSupport;
 import com.gihtub.am4dr.javafx.sample_viewer.SampleViewer;
-import com.gihtub.am4dr.javafx.sample_viewer.sample.NameBasedSample;
+import com.gihtub.am4dr.javafx.sample_viewer.sample.UpdateAwareSample;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -18,6 +18,7 @@ public final class SampleApplication extends SampleApplicationSupport {
     }
 
     private void addSamples(SampleViewer viewer) {
-        viewer.addSample(new NameBasedSample<>("colorful buttons!", ColorfulButtonSample.class.getName(), this::createWatcher));
+        viewer.addSample(new UpdateAwareSample<>("colorful buttons!", ColorfulButtonSample.class.getName(), this::createWatcher));
+        viewer.addSample(new UpdateAwareSample<>("colorful buttons!", ColorfulButtonSample.class, this::createWatcher));
     }
 }
