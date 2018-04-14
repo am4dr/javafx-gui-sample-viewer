@@ -10,25 +10,23 @@ import java.util.function.Consumer;
  *
  * @param <R> root type of the sample node tree
  */
-public abstract class Sample<R extends Node> {
+public abstract class SampleNodeGenerator<R extends Node> {
 
     public final Consumer<? super R> initializer;
     protected final ReadOnlyObjectWrapper<R> node = new ReadOnlyObjectWrapper<>();
 
-    public Sample(Consumer<? super R> initializer) {
+    public SampleNodeGenerator(Consumer<? super R> initializer) {
         this.initializer = initializer;
     }
-    public Sample() {
+    public SampleNodeGenerator() {
         this(node -> {});
     }
 
-    public abstract ReadOnlyObjectProperty<R> nodeProperty();
+    public ReadOnlyObjectProperty<R> nodeProperty() {
+        return node.getReadOnlyProperty();
+    }
 
     public R getNode() {
         return nodeProperty().get();
-    }
-
-    public interface Reloadable {
-        void reload();
     }
 }
