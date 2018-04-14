@@ -6,7 +6,6 @@ import com.gihtub.am4dr.javafx.sample_viewer.SampleViewer;
 import com.gihtub.am4dr.javafx.sample_viewer.sample.ClassBasedSample;
 import com.gihtub.am4dr.javafx.sample_viewer.sample.NameBasedSample;
 import com.gihtub.am4dr.javafx.sample_viewer.sample.SimpleSample;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -26,7 +25,7 @@ public final class ControlSamples extends SampleApplicationSupport {
         viewer.addSample(new ClassBasedSample<>("empty Pane()", Pane.class));
         viewer.addSample(new ClassBasedSample<>("empty SampleViewer.View", SampleViewer.View.class));
         viewer.addSample(new ClassBasedSample<>("SampleViewerSample by Class<T> class", SampleViewerSample.class));
-        viewer.addSample(new NameBasedSample<>("SampleViewerSample by class name", SampleViewerSample.class.getName(), Node.class, ClassPathWatcher::new));
+        viewer.addSample(new NameBasedSample<>("SampleViewerSample by class name", SampleViewerSample.class.getName(), SampleViewerSample.class, ClassPathWatcher::new));
         viewer.addSample(new SimpleSample<>("SampleViewerSample by class instance", new SampleViewerSample()));
     }
 }
