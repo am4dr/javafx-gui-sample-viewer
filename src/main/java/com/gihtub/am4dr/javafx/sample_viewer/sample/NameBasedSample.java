@@ -13,14 +13,14 @@ public final class NameBasedSample<R extends Node> extends Sample<R> implements 
 
     private final UpdateAwareNode<R> node;
 
-    public NameBasedSample(String title, String name, Class<R> rootClass, Supplier<URLClassLoader> cls) {
+    public NameBasedSample(String title, String rootClassName, Supplier<URLClassLoader> cls) {
         super(title);
-        this.node = new UpdateAwareNode<>(cls, rootClass, super.initializer);
+        this.node = new UpdateAwareNode<R>(cls, rootClassName, super.initializer);
         super.node.bind(this.node);
     }
-    public NameBasedSample(String title, String name, Class<R> rootClass, Supplier<URLClassLoader> cls, Consumer<? super R> initializer) {
+    public NameBasedSample(String title, String rootClassName, Supplier<URLClassLoader> cls, Consumer<? super R> initializer) {
         super(title, initializer);
-        this.node = new UpdateAwareNode<>(cls, rootClass, initializer);
+        this.node = new UpdateAwareNode<R>(cls, rootClassName, initializer);
         super.node.bind(this.node);
     }
 

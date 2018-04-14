@@ -18,6 +18,6 @@ public final class SampleApplication extends SampleApplicationSupport {
     }
 
     private void addSamples(SampleViewer viewer) {
-        viewer.addSample(new NameBasedSample<>("colorful buttons!", ColorfulButtonSample.class.getName(), ColorfulButtonSample.class, this::createWatcher));
+        viewer.addSample(new NameBasedSample<>("colorful buttons!", ColorfulButtonSample.class.getName(), this::createWatcher));
     }
 }

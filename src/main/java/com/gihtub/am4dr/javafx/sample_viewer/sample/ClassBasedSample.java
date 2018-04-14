@@ -2,7 +2,6 @@ package com.gihtub.am4dr.javafx.sample_viewer.sample;
 
 import com.gihtub.am4dr.javafx.sample_viewer.Sample;
 import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Node;
 
 import java.lang.reflect.InvocationTargetException;
@@ -11,7 +10,6 @@ import java.util.function.Consumer;
 public final class ClassBasedSample<R extends Node> extends Sample<R> {
 
     public final Class<R> viewClass;
-    private final ReadOnlyObjectProperty<R> node = new SimpleObjectProperty<>();
 
     public ClassBasedSample(String title, Class<R> viewClass) {
         super(title);
@@ -28,11 +26,11 @@ public final class ClassBasedSample<R extends Node> extends Sample<R> {
             try {
                 var newNode = viewClass.getDeclaredConstructor().newInstance();
                 initializer.accept(newNode);
-                ((SimpleObjectProperty<R>)node).set(newNode);
+                node.set(newNode);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 e.printStackTrace();
             }
         }
-        return node;
+        return node.getReadOnlyProperty();
     }
 }

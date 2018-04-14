@@ -16,12 +16,17 @@ import java.util.function.Supplier;
 
 public class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
-    private final Class<R> rootClass;
+    private final String name;
     private final Supplier<URLClassLoader> cls;
     private final Consumer<? super R> initializer;
 
     public UpdateAwareNode(Supplier<URLClassLoader> cls, Class<R> rootClass, Consumer<? super R> initializer) {
-        this.rootClass = rootClass;
+        this.name = rootClass.getName();
+        this.cls = cls;
+        this.initializer = initializer;
+    }
+    public UpdateAwareNode(Supplier<URLClassLoader> cls, String rootClassName, Consumer<? super R> initializer) {
+        this.name = rootClassName;
         this.cls = cls;
         this.initializer = initializer;
     }
@@ -38,7 +43,7 @@ public class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
                 cl = cls.get();
                 watchReloadEvent(cl);
             }
-            final Object obj = cl.loadClass(rootClass.getName()).getDeclaredConstructor().newInstance();
+            final Object obj = cl.loadClass(name).getDeclaredConstructor().newInstance();
             var newNode = (R) obj;
             initializer.accept(newNode);
             return newNode;
