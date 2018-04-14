@@ -40,14 +40,10 @@ configure(samples) {
         api project(':')
     }
 }
-sourceSets {
-    target
-}
 
 mainClassName = 'com.gihtub.am4dr.javafx.sample_viewer.Launcher'
 run {
-    dependsOn(':compileTargetJava')
-    args = ["com.gihtub.am4dr.javafx.sample_viewer.example.ControlSamples", "build/classes/java/target"]
+    args = ["com.gihtub.am4dr.javafx.sample_viewer.example.ControlSamples"]
 }
 
 javadoc {

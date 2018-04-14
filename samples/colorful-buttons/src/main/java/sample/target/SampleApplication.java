@@ -10,11 +10,10 @@ public class SampleApplication extends Launcher {
 
     @Override
     public void start(Stage stage) {
-        stage.setTitle("GUI control samples of SampleViewer");
         final var viewer = new SampleViewer();
         addSamples(viewer);
-        final var scene = new Scene(viewer.getView(), 600.0, 400.0);
-        stage.setScene(scene);
+        stage.setTitle("GUI control samples of SampleViewer");
+        stage.setScene(new Scene(viewer.getView(), 600.0, 400.0));
         stage.show();
     }
 
