@@ -1,0 +1,50 @@
+plugins {
+    id 'java-library'
+}
+
+sourceSets {  // declare source-set for UI sample application
+    uiSamples
+} // put UI sample application codes into src/<source-set name>/java
+dependencies {
+    uiSamplesCompile project(':') // add javafx-gui-sample-viewer
+    uiSamplesCompile sourceSets.main.output // and target classes
+}
+task runSampleWithLauncher(type: JavaExec) {
+    classpath sourceSets.uiSamples.runtimeClasspath
+    main = 'com.gihtub.am4dr.javafx.sample_viewer.Launcher'
+    args = ["sample.target.UISampleApplication", "build/classes/java/main"]
+}
+task runSampleDirectly(type: JavaExec) {
+    classpath sourceSets.uiSamples.runtimeClasspath
+    main = 'sample.target.UISampleApplication'
+    args = ["--path=build/classes/java/main"]
+}
+
+
+// if you use the Java Platform Module System, configure java tasks (or use jigsaw plugin)
+ext.moduleName = 'sample.target'
+afterEvaluate {
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+    compileJava {
+        inputs.property("moduleName", moduleName)
+        doFirst {
+            options.compilerArgs = [
+                    '--module-path', classpath.asPath,
+            ]
+            classpath = files()
+        }
+    }
+    compileTestJava {
+        inputs.property("moduleName", moduleName)
+        doFirst {
+            options.compilerArgs = [
+                    '--module-path', classpath.asPath,
+                    '--add-modules', 'org.junit.jupiter.api',
+                    '--patch-module', moduleName + '=' + files(sourceSets.test.java.srcDirs).asPath,
+            ]
+            classpath = files()
+        }
+    }
+}

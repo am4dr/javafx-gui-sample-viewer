@@ -20,7 +20,7 @@ ext {
             'junit_api': 'org.junit.jupiter:junit-jupiter-api:'+junit_version,
             'junit_runtime': 'org.junit.jupiter:junit-jupiter-engine:'+junit_version,
     ]
-    samples = ['colorful-buttons'].collect { project ":$it" }
+    samples = ['colorful-buttons', 'colorful-buttons_with-sourceset-separation'].collect { project ":$it" }
 }
 
 dependencies {

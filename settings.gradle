@@ -1,6 +1,6 @@
 rootProject.name = "javafx-gui-sample-viewer"
 
-def samples = ['colorful-buttons']
+def samples = ['colorful-buttons', 'colorful-buttons_with-sourceset-separation']
 samples.each {
     include it
     project(":$it").projectDir = new File("samples/$it")
