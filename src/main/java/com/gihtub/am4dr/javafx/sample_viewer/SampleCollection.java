@@ -1,6 +1,6 @@
 package com.gihtub.am4dr.javafx.sample_viewer;
 
-import com.gihtub.am4dr.javafx.sample_viewer.sample.SampleNodeGenerator;
+import com.gihtub.am4dr.javafx.sample_viewer.sample.SampleNodeContainer;
 import javafx.beans.Observable;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyProperty;
@@ -16,7 +16,7 @@ import static javafx.collections.FXCollections.observableArrayList;
 public final class SampleCollection {
 
     public final ReadOnlyProperty<ObservableList<String>> titles = new SimpleListProperty<>(observableArrayList());
-    public final ReadOnlyObjectProperty<SampleNodeGenerator<?>> selected = new SimpleObjectProperty<>();
+    public final ReadOnlyObjectProperty<SampleNodeContainer<?>> selected = new SimpleObjectProperty<>();
     public final ReadOnlyObjectProperty<Node> selectedNode = new SimpleObjectProperty<>();
 
     private final ObservableList<Entry> entries = observableArrayList();
@@ -31,7 +31,7 @@ public final class SampleCollection {
         });
     }
 
-    public <R extends Node> void addSample(String title, SampleNodeGenerator<R> sample) {
+    public <R extends Node> void addSample(String title, SampleNodeContainer<R> sample) {
         if (sample.getNode() != null) {
             entries.add(new Entry(title, sample));
         }
@@ -39,16 +39,16 @@ public final class SampleCollection {
 
     public void select(int i) {
         if (i >= 0 && i < entries.size()) {
-            ((SimpleObjectProperty<SampleNodeGenerator<?>>)selected).set(entries.get(i).sample);
+            ((SimpleObjectProperty<SampleNodeContainer<?>>)selected).set(entries.get(i).sample);
         }
     }
 
     private static class Entry {
 
         public final String title;
-        public final SampleNodeGenerator<?> sample;
+        public final SampleNodeContainer<?> sample;
 
-        private Entry(String title, SampleNodeGenerator<?> sample) {
+        private Entry(String title, SampleNodeContainer<?> sample) {
             this.title = title;
             this.sample = sample;
         }

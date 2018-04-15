@@ -1,10 +1,19 @@
 package com.gihtub.am4dr.javafx.sample_viewer.sample;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Node;
 
-public final class SimpleSample<T extends Node> extends SampleNodeGenerator<T> {
+public final class SimpleSample<R extends Node> implements SampleNodeContainer<R> {
 
-    public SimpleSample(T node) {
-        super.node.set(node);
+    private final ReadOnlyObjectWrapper<R> node;
+
+    public SimpleSample(R node) {
+        this.node = new ReadOnlyObjectWrapper<>(node);
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<R> nodeProperty() {
+        return node.getReadOnlyProperty();
     }
 }
