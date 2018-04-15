@@ -2,6 +2,7 @@ package com.gihtub.am4dr.javafx.sample_viewer;
 
 import com.gihtub.am4dr.javafx.sample_viewer.util.DaemonThreadFactory;
 import com.gihtub.am4dr.javafx.sample_viewer.util.SimpleSubscriber;
+import com.gihtub.am4dr.javafx.sample_viewer.util.WaitLastProcessor;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
 import javafx.scene.Node;
@@ -10,7 +11,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -43,8 +46,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
                 cl = cls.get();
                 watchReloadEvent(cl);
             }
-            final Object obj = cl.loadClass(name).getDeclaredConstructor().newInstance();
-            var newNode = (R) obj;
+            final R newNode = (R) cl.loadClass(name).getDeclaredConstructor().newInstance();
             initializer.accept(newNode);
             return newNode;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
@@ -58,22 +60,15 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         if (!(loader instanceof ClassPathWatcher)) {
             return;
         }
-        final ClassPathWatcher watcher = (ClassPathWatcher) loader;
-        final Flow.Publisher<Path> changePublisher = watcher.getChangePublisher();
-        changePublisher.subscribe(new SimpleSubscriber<>() {
-            Future<?> reloadFuture;
+        final WaitLastProcessor<Path> lastProcessor = new WaitLastProcessor<>(executor, 1000, TimeUnit.MILLISECONDS);
+        lastProcessor.subscribe(new SimpleSubscriber<>() {
             @Override
             public void onNext(Path item) {
-                if (reloadFuture != null) {
-                    reloadFuture.cancel(true);
-                }
-                reloadFuture = executor.schedule(() -> {
-                    subscription.cancel();
-                    Platform.runLater(UpdateAwareNode.this::invalidate);
-                }, 1000, TimeUnit.MILLISECONDS);
-                subscription.request(1);
+                subscription.cancel();
+                Platform.runLater(UpdateAwareNode.this::invalidate);
             }
         });
+        ((ClassPathWatcher) loader).getChangePublisher().subscribe(lastProcessor);
     }
 
     @Override
