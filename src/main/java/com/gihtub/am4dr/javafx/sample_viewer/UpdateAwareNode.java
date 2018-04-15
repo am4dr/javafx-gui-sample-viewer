@@ -14,7 +14,7 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
+public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
     private final String name;
     private final Supplier<URLClassLoader> cls;

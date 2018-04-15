@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedFunction.uncheckedFunction;
 
-public class Launcher {
+public final class Launcher {
 
     public static void main(String[] args) throws ClassNotFoundException {
         if (args.length < 1) {
