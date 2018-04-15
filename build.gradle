@@ -1,5 +1,4 @@
 plugins {
-    id 'application'
     id 'java-library'
     id 'maven'
 
@@ -32,18 +31,16 @@ test {
     useJUnitPlatform()
 }
 
-configure(samples) {
-    apply plugin: 'java-library'
-    sourceCompatibility = jdkVersion
-
-    dependencies {
-        api project(':')
-    }
+sourceSets {
+    uiSample
 }
-
-mainClassName = 'com.gihtub.am4dr.javafx.sample_viewer.Launcher'
-run {
-    args = ["com.gihtub.am4dr.javafx.sample_viewer.example.ControlSamples"]
+dependencies {
+    uiSampleCompile sourceSets.main.output
+}
+task runUiSamples(type: JavaExec) {
+    classpath = sourceSets.uiSample.runtimeClasspath
+    main = 'com.gihtub.am4dr.javafx.sample_viewer.Launcher'
+    args = ['com.gihtub.am4dr.javafx.sample_viewer.example.ControlSamples']
 }
 
 javadoc {
@@ -87,4 +84,14 @@ bintray {
         }
     }
     configurations = ['jarForBintrayUpload']
+}
+
+
+configure(samples) {
+    apply plugin: 'java-library'
+    sourceCompatibility = jdkVersion
+
+    dependencies {
+        api project(':')
+    }
 }
