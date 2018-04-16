@@ -2,8 +2,7 @@ package com.gihtub.am4dr.javafx.sample_viewer.example;
 
 import com.gihtub.am4dr.javafx.sample_viewer.SampleApplicationSupport;
 import com.gihtub.am4dr.javafx.sample_viewer.SampleViewer;
-import com.gihtub.am4dr.javafx.sample_viewer.sample.SimpleSample;
-import com.gihtub.am4dr.javafx.sample_viewer.sample.UpdateAwareSample;
+import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareNode;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -19,8 +18,8 @@ public final class ControlSamples extends SampleApplicationSupport {
     }
 
     private void addSamples(SampleViewer viewer) {
-        viewer.addSample("empty SampleViewer.View", new SimpleSample<>(new SampleViewer.View()));
-        viewer.addSample("SampleViewerSample by Class<T> class", new UpdateAwareSample<>(this::createWatcher, SampleViewerSample.class));
-        viewer.addSample("SampleViewerSample by class name", new UpdateAwareSample<>(this::createWatcher, SampleViewerSample.class.getName()));
+        viewer.addSample("empty SampleViewer.View", new SampleViewer.View());
+        viewer.addSample("SampleViewerSample by Class<T> class", new UpdateAwareNode<>(this::createWatcher, SampleViewerSample.class));
+        viewer.addSample("SampleViewerSample by class name", new UpdateAwareNode<>(this::createWatcher, SampleViewerSample.class.getName()));
     }
 }

@@ -1,10 +1,11 @@
 package com.gihtub.am4dr.javafx.sample_viewer;
 
-import com.gihtub.am4dr.javafx.sample_viewer.sample.SampleNodeContainer;
+import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
@@ -24,7 +25,15 @@ public final class SampleViewer {
         view.titles.bind(samples.titles);
     }
 
-    public <R extends Node> void addSample(String title, SampleNodeContainer<R> sample) {
+    public <R extends Node> void addSample(String title, R sample) {
+        addSample(title, new ObjectBinding<>() {
+            @Override
+            protected Node computeValue() {
+                return sample;
+            }
+        });
+    }
+    public <R extends Node> void addSample(String title, ObservableValue<R> sample) {
         samples.addSample(title, sample);
     }
 
