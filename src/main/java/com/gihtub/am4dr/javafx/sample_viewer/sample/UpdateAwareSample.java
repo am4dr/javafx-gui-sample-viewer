@@ -23,11 +23,10 @@ public final class UpdateAwareSample<R extends Node> implements SampleNodeContai
         this(cls, rootClassName, r -> {});
     }
     public UpdateAwareSample(Supplier<URLClassLoader> cls, String rootClassName, Consumer<? super R> initializer) {
-        final UpdateAwareNode<R> node = UpdateAwareNode.<R>builder()
+        final UpdateAwareNode<R> node = UpdateAwareNode.build(b -> b
                 .name(rootClassName)
                 .classloader(cls)
-                .initializer(initializer)
-                .build();
+                .initializer(initializer));
         this.node.bind(node);
     }
 

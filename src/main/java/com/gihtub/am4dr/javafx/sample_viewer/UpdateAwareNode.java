@@ -5,6 +5,8 @@ import com.gihtub.am4dr.javafx.sample_viewer.util.SimpleSubscriber;
 import com.gihtub.am4dr.javafx.sample_viewer.util.WaitLastProcessor;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Node;
 
 import java.lang.reflect.InvocationTargetException;
@@ -13,10 +15,12 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedConsumer.uncheckedConsumer;
 import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedRunnable.uncheckedRunnable;
@@ -41,8 +45,19 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         this.cls = builder.classLoaderSupplier;
         this.initializer = builder.initializer;
     }
-    public static <R extends Node> Builder<R> builder() {
-        return new Builder<>();
+    public static <R extends Node> UpdateAwareNode<R> build(UnaryOperator<Builder<R>> configuration) {
+        return configuration.apply(new Builder<>()).build();
+    }
+
+    private final ReadOnlyObjectWrapper<STATUS> status = new ReadOnlyObjectWrapper<>(STATUS.RELOADING);
+    public ReadOnlyObjectProperty<STATUS> statusProperty() {
+        return status.getReadOnlyProperty();
+    }
+
+    @Override
+    protected void onInvalidating() {
+        super.onInvalidating();
+        status.set(STATUS.RELOADING);
     }
 
     @Override
@@ -65,9 +80,10 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         try {
             final R node = (R) loader.loadClass(name).getDeclaredConstructor().newInstance();
             initializer.accept(node);
+            status.set(STATUS.OK);
             return Optional.of(node);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
-            // TODO Change state
+            status.set(STATUS.ERROR);
         }
         return Optional.empty();
     }
@@ -91,9 +107,21 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
                 subscription.request(1);
             }
         });
-        ((ClassPathWatcher) loader).getChangePublisher().subscribe(lastProcessor);
+        final Flow.Publisher<Path> changePublisher = ((ClassPathWatcher) loader).getChangePublisher();
+        changePublisher.subscribe(lastProcessor);
+        changePublisher.subscribe(new SimpleSubscriber<>() {
+            @Override
+            public void onNext(Path item) {
+                Platform.runLater(() -> UpdateAwareNode.this.status.set(STATUS.UPDATE_AWARE));
+                subscription.request(1);
+            }
+        });
     }
 
+
+    public enum STATUS {
+        OK, ERROR, RELOADING, UPDATE_AWARE
+    }
 
     public static final class Builder<R extends Node> {
 
