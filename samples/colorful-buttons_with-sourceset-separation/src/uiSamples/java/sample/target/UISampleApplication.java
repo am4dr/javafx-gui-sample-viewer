@@ -1,7 +1,6 @@
 package sample.target;
 
 import com.gihtub.am4dr.javafx.sample_viewer.SampleApplicationSupport;
-import com.gihtub.am4dr.javafx.sample_viewer.SampleViewer;
 import com.gihtub.am4dr.javafx.sample_viewer.sample.UpdateAwareSample;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
