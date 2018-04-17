@@ -46,12 +46,8 @@ public final class ClassPathWatcher extends URLClassLoader {
                     break;
                 }
                 key.pollEvents().stream()
-                        .filter(Path.class::isInstance)
+                        .map(WatchEvent::context)
                         .map(Path.class::cast)
-                        .filter(it -> {
-                            final String name = it.getFileName().toString();
-                            return name.endsWith(".jar") || name.endsWith(".class");
-                        })
                         .forEach(publisher::submit);
                 key.reset();
             }
@@ -73,23 +69,21 @@ public final class ClassPathWatcher extends URLClassLoader {
             if (findLoadedClass(name) != null) {
                 return super.loadClass(name);
             }
-            Class<?> aClass = findClassOrNull(name);
+            final Class<?> aClass = findClassOrNull(name);
             if (aClass == null) {
-                aClass = super.loadClass(name);
+                return super.loadClass(name);
             }
-            if (aClass.getClassLoader() == this) {
-                try {
-                    final Path path = Paths.get(aClass.getProtectionDomain().getCodeSource().getLocation().toURI())
-                            .resolve(aClass.getName().replace(".", "/") + ".class")
-                            .toRealPath();
-                    final Path parent = path.getParent();
-                    if (!paths.contains(parent)) {
-                        paths.add(parent);
-                        parent.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
-                    }
-                } catch (URISyntaxException | IOException e) {
-                    e.printStackTrace();
+            try {
+                final Path path = Paths.get(aClass.getProtectionDomain().getCodeSource().getLocation().toURI())
+                        .resolve(aClass.getName().replace(".", "/") + ".class")
+                        .toRealPath();
+                final Path parent = path.getParent();
+                if (!paths.contains(parent)) {
+                    paths.add(parent);
+                    parent.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
                 }
+            } catch (URISyntaxException | IOException e) {
+                e.printStackTrace();
             }
             return aClass;
         }
