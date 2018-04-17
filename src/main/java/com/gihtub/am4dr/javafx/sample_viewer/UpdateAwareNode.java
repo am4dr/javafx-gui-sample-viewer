@@ -1,8 +1,8 @@
 package com.gihtub.am4dr.javafx.sample_viewer;
 
-import com.gihtub.am4dr.javafx.sample_viewer.util.DaemonThreadFactory;
-import com.gihtub.am4dr.javafx.sample_viewer.util.SimpleSubscriber;
-import com.gihtub.am4dr.javafx.sample_viewer.util.WaitLastProcessor;
+import com.gihtub.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
+import com.gihtub.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
+import com.gihtub.am4dr.javafx.sample_viewer.internal.WaitLastProcessor;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -21,8 +21,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedConsumer.uncheckedConsumer;
-import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedRunnable.uncheckedRunnable;
+import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedConsumer.uncheckedConsumer;
+import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedRunnable.uncheckedRunnable;
 
 /**
  *

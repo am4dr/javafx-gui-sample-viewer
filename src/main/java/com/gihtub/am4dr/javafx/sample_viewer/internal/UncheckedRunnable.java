@@ -1,4 +1,4 @@
-package com.gihtub.am4dr.javafx.sample_viewer.util;
+package com.gihtub.am4dr.javafx.sample_viewer.internal;
 
 @FunctionalInterface
 public interface UncheckedRunnable extends Runnable {

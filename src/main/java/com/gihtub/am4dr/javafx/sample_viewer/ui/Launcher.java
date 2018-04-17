@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedFunction.uncheckedFunction;
+import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
 
 public final class Launcher {
 
