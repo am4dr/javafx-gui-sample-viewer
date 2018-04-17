@@ -12,7 +12,6 @@ import javafx.scene.Node;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
@@ -37,19 +36,21 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     private final Supplier<URLClassLoader> cls;
     private final Consumer<? super R> initializer;
     private R node;
+    private final int waitTimeToDetermineTheLastEvent;
+    private static final int defaultWaitTimeMillis = 100;
 
     public UpdateAwareNode(Supplier<URLClassLoader> cls, Class<R> rootClass) {
         this(cls, rootClass.getName());
     }
     public UpdateAwareNode(Supplier<URLClassLoader> cls, String rootClassName) {
-        this.name = rootClassName;
-        this.cls = cls;
-        this.initializer = n -> {};
+        this(new Builder<R>().classloader(cls).name(rootClassName));
     }
     private UpdateAwareNode(Builder<R> builder) {
-        this.name = builder.className;
-        this.cls = builder.classLoaderSupplier;
-        this.initializer = builder.initializer;
+        final var checkedBuilder = builder.check();
+        this.name = checkedBuilder.className;
+        this.cls = checkedBuilder.classLoaderSupplier;
+        this.initializer = checkedBuilder.initializer;
+        this.waitTimeToDetermineTheLastEvent = checkedBuilder.waitTimeMillis;
     }
     public static <R extends Node> UpdateAwareNode<R> build(UnaryOperator<Builder<R>> configuration) {
         return configuration.apply(new Builder<>()).build();
@@ -105,7 +106,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         if (!(loader instanceof ClassPathWatcher)) {
             return;
         }
-        final WaitLastProcessor<Path> lastProcessor = new WaitLastProcessor<>(executor, 1000, TimeUnit.MILLISECONDS);
+        final WaitLastProcessor<Path> lastProcessor = new WaitLastProcessor<>(executor, waitTimeToDetermineTheLastEvent, TimeUnit.MILLISECONDS);
         lastProcessor.subscribe(new SimpleSubscriber<>() {
             @Override
             public void onNext(Path item) {
@@ -131,38 +132,51 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
     public static final class Builder<R extends Node> {
 
-        public final String className;
-        public final Supplier<URLClassLoader> classLoaderSupplier;
-        public final Consumer<? super R> initializer;
+        private final String className;
+        private final Supplier<URLClassLoader> classLoaderSupplier;
+        private final Consumer<? super R> initializer;
+        private final int waitTimeMillis;
 
         public Builder() {
-            this(null, null, null);
+            this(null, null, null, defaultWaitTimeMillis);
         }
-        public Builder(String className, Supplier<URLClassLoader> classLoaderSupplier, Consumer<? super R> initializer) {
+        public Builder(String className, Supplier<URLClassLoader> classLoaderSupplier, Consumer<? super R> initializer, int waitTimeMillis) {
             this.className = className;
             this.classLoaderSupplier = classLoaderSupplier;
             this.initializer = initializer;
+            this.waitTimeMillis = waitTimeMillis;
         }
 
-        public UpdateAwareNode<R> build() {
+        public Builder<R> check() {
             if (className == null) {
                 throw new IllegalStateException("className must not be null: call name(String) or type(Class<? extends Node>)");
             }
             if (classLoaderSupplier == null) {
                 throw new IllegalStateException("classLoaderSupplier must not be null: call classloader(Supplier<URLCLassLoader>)");
             }
-            final Builder<R> builder = new Builder<R>(className, classLoaderSupplier, Objects.requireNonNullElse(initializer, node -> {}));
-            return new UpdateAwareNode<>(builder);
+            if (initializer == null) {
+                return initializer(node -> {});
+            }
+            if (waitTimeMillis < 0) {
+                return waitTimeMillis(defaultWaitTimeMillis);
+            }
+            return this;
+        }
+        public UpdateAwareNode<R> build() {
+            return new UpdateAwareNode<>(this);
         }
 
         public Builder<R> name(String className) {
-            return new Builder<R>(className, classLoaderSupplier, initializer);
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
         }
         public Builder<R> classloader(Supplier<URLClassLoader> classLoaderSupplier) {
-            return new Builder<R>(className, classLoaderSupplier, initializer);
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
         }
         public Builder<R> initializer(Consumer<? super R> initializer) {
-            return new Builder<R>(className, classLoaderSupplier, initializer);
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
+        }
+        public Builder<R> waitTimeMillis(int waitTimeMillis) {
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
         }
         public Builder<R> type(Class<? extends R> type) {
             return name(type.getName());
