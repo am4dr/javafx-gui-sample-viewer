@@ -1,8 +1,9 @@
 package sample.target;
 
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleViewer;
 import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareNode;
+import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
+import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollection;
+import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -10,15 +11,17 @@ public final class SampleApplication extends SampleApplicationSupport {
 
     @Override
     public void start(Stage stage) {
-        final var viewer = new SampleViewer();
-        addSamples(viewer);
+
+        final var viewer = new SampleCollectionViewer(createSamples());
         stage.setTitle("GUI control samples of SampleViewer");
         stage.setScene(new Scene(viewer.getView(), 600.0, 400.0));
         stage.show();
     }
 
-    private void addSamples(SampleViewer viewer) {
-        viewer.addSample("colorful buttons!", new UpdateAwareNode<>(this::createWatcher, ColorfulButtonSample.class.getName()));
-        viewer.addSample("colorful buttons!", new UpdateAwareNode<>(this::createWatcher, ColorfulButtonSample.class));
+    private SampleCollection createSamples() {
+        final SampleCollection samples = new SampleCollection();
+        samples.addSample("colorful buttons!", new UpdateAwareNode<>(this::createWatcher, ColorfulButtonSample.class.getName()));
+        samples.addSample("colorful buttons!", new UpdateAwareNode<>(this::createWatcher, ColorfulButtonSample.class));
+        return samples;
     }
 }

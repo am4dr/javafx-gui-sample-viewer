@@ -1,6 +1,7 @@
 package com.gihtub.am4dr.javafx.sample_viewer.ui;
 
 import javafx.beans.Observable;
+import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleListProperty;
@@ -27,6 +28,15 @@ public final class SampleCollection {
             ((SimpleListProperty<String>)titles).setAll(entries.stream().map(it -> it.title).collect(Collectors.toList()));
             if (entries.size() == 1) {
                 select(0);
+            }
+        });
+    }
+
+    public <R extends Node> void addSample(String title, R sample) {
+        addSample(title, new ObjectBinding<>() {
+            @Override
+            protected Node computeValue() {
+                return sample;
             }
         });
     }

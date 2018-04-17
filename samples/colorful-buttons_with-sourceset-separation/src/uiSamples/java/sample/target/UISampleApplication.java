@@ -1,7 +1,7 @@
 package sample.target;
 
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
 import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareNode;
+import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
 import javafx.scene.Scene;
