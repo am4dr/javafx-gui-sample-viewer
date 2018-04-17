@@ -13,13 +13,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
-import java.util.stream.Collectors;
 
 import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedFunction.uncheckedFunction;
 
 public final class ClassPathWatcher extends URLClassLoader {
 
-    private final List<Path> paths = new ArrayList<>();
     private final ExecutorService executor = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
     private final SubmissionPublisher<Path> publisher = new SubmissionPublisher<>(executor, 10);
     private final WatchService watchService;
@@ -47,16 +45,14 @@ public final class ClassPathWatcher extends URLClassLoader {
                 } catch (InterruptedException e) {
                     break;
                 }
-                final List<Path> changed = key.pollEvents().stream()
-                        .map(it -> (Path) it.context())
+                key.pollEvents().stream()
+                        .filter(Path.class::isInstance)
+                        .map(Path.class::cast)
                         .filter(it -> {
-                            final String fileName = it.getFileName().toString();
-                            return fileName.endsWith(".jar") || fileName.endsWith(".class");
+                            final String name = it.getFileName().toString();
+                            return name.endsWith(".jar") || name.endsWith(".class");
                         })
-                        .collect(Collectors.toList());
-                if (!changed.isEmpty()) {
-                    publisher.submit(changed.get(0));
-                }
+                        .forEach(publisher::submit);
                 key.reset();
             }
         });
@@ -70,6 +66,7 @@ public final class ClassPathWatcher extends URLClassLoader {
         watchService.close();
     }
 
+    private final List<Path> paths = new ArrayList<>();
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {

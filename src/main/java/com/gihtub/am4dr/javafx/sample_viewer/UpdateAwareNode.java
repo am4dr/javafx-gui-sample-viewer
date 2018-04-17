@@ -25,6 +25,12 @@ import java.util.function.UnaryOperator;
 import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedConsumer.uncheckedConsumer;
 import static com.gihtub.am4dr.javafx.sample_viewer.util.UncheckedRunnable.uncheckedRunnable;
 
+/**
+ *
+ *
+ * This class may call {@link Platform#runLater(Runnable)} internally.
+ * @param <R>
+ */
 public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
     private final String name;
