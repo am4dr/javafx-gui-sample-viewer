@@ -1,6 +1,6 @@
 package com.gihtub.am4dr.javafx.sample_viewer.example;
 
-import com.gihtub.am4dr.javafx.sample_viewer.SampleViewer;
+import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleViewer;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 

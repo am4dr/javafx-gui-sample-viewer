@@ -1,4 +1,4 @@
-package com.gihtub.am4dr.javafx.sample_viewer;
+package com.gihtub.am4dr.javafx.sample_viewer.ui;
 
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ListProperty;

@@ -1,7 +1,7 @@
 apply plugin: 'application'
 
 
-mainClassName = 'com.gihtub.am4dr.javafx.sample_viewer.Launcher'
+mainClassName = 'com.gihtub.am4dr.javafx.sample_viewer.ui.Launcher'
 
 run {
     args = ["sample.target.SampleApplication", "build/classes/java/main"]

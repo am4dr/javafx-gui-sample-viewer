@@ -1,5 +1,6 @@
-package com.gihtub.am4dr.javafx.sample_viewer;
+package com.gihtub.am4dr.javafx.sample_viewer.ui;
 
+import com.gihtub.am4dr.javafx.sample_viewer.ClassPathWatcher;
 import javafx.application.Application;
 
 import java.io.File;

@@ -11,7 +11,7 @@ dependencies {
 }
 task runSampleWithLauncher(type: JavaExec) {
     classpath sourceSets.uiSamples.runtimeClasspath
-    main = 'com.gihtub.am4dr.javafx.sample_viewer.Launcher'
+    main = 'com.gihtub.am4dr.javafx.sample_viewer.ui.Launcher'
     args = ["sample.target.UISampleApplication", "build/classes/java/main"]
 }
 task runSampleDirectly(type: JavaExec) {
