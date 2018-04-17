@@ -19,4 +19,13 @@ public interface UncheckedFunction<T, R> extends Function<T, R> {
     static <T, R> Function<T, R> uncheckedFunction(UncheckedFunction<T, R> function) {
         return function;
     }
+    static <T, R> Function<T, R> uncheckedFunction(UncheckedFunction<T, R> function, R defaultValue) {
+        return t -> {
+            try {
+                return function.apply(t);
+            } catch (Throwable throwable) {
+                return defaultValue;
+            }
+        };
+    }
 }
