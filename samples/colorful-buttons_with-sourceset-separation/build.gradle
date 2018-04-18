@@ -19,6 +19,11 @@ task runSampleDirectly(type: JavaExec) {
     main = 'sample.target.UISampleApplication'
     args = ["--path=build/classes/java/main"]
 }
+task runSampleNodeWithLauncher(type: JavaExec) {
+    classpath sourceSets.uiSamples.runtimeClasspath
+    main = 'com.gihtub.am4dr.javafx.sample_viewer.ui.Launcher'
+    args = ["sample.target.ColorfulButtonCollection", "build/classes/java/main"]
+}
 
 
 // if you use the Java Platform Module System, configure java tasks (or use jigsaw plugin)
