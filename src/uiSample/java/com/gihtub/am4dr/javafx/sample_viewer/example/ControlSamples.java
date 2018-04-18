@@ -1,10 +1,12 @@
 package com.gihtub.am4dr.javafx.sample_viewer.example;
 
+import com.gihtub.am4dr.javafx.sample_viewer.ui.StatusBorderedPane;
 import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareNode;
 import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
 import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollection;
 import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 public final class ControlSamples extends SampleApplicationSupport {
@@ -22,6 +24,9 @@ public final class ControlSamples extends SampleApplicationSupport {
         samples.addSample("empty SampleViewer.View", new SampleCollectionViewer.View());
         samples.addSample("SampleViewerSample by Class<T> class", new UpdateAwareNode<>(this::createWatcher, SampleViewerSample.class));
         samples.addSample("SampleViewerSample by class name", new UpdateAwareNode<>(this::createWatcher, SampleViewerSample.class.getName()));
+        samples.addSample("BorderLayer", new StatusBorderedPane.BorderLayer());
+        samples.addSample("StatusBorderedPane(OK)", new StatusBorderedPane(new UpdateAwareNode<>(this::createWatcher, Pane.class)));
+        samples.addSample("StatusBorderedPane(ERROR)", new StatusBorderedPane(new UpdateAwareNode<>(this::createWatcher, "NotFound")));
         return samples;
     }
 }
