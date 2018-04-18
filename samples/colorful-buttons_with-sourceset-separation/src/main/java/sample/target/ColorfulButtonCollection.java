@@ -24,6 +24,7 @@ import javafx.util.Duration;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static javafx.scene.paint.Color.*;
@@ -90,27 +91,26 @@ public final class ColorfulButtonCollection extends VBox {
         Bindings.bindContent(tilePane.getChildren(), buttons);
 
         final var sort = new FlowPane(new Label("sort: "),
-                new Button("reverse") {{
-                    setOnAction(e -> FXCollections.reverse(buttons));
-                }},
-                new Button("by Red") {{
-                    setOnAction(e -> FXCollections.sort(buttons, Comparator.comparing(it -> getColor(it).getRed(), Comparator.reverseOrder())));
-                }},
-                new Button("by Green") {{
-                    setOnAction(e -> FXCollections.sort(buttons, Comparator.comparing(it -> getColor(it).getGreen(), Comparator.reverseOrder())));
-                }},
-                new Button("by Blue") {{
-                    setOnAction(e -> FXCollections.sort(buttons, Comparator.comparing(it -> getColor(it).getBlue(), Comparator.reverseOrder())));
-                }},
-                new Button("by Gray") {{
-                    setOnAction(e -> FXCollections.sort(buttons, Comparator.comparing(it -> getColor(it).grayscale().getGreen(), Comparator.reverseOrder())));
-                }},
-                new Button("by Hue") {{
-                    setOnAction(e -> FXCollections.sort(buttons, Comparator.comparing(it -> getColor(it).getHue(), Comparator.reverseOrder())));
-                }});
+                new Button("reverse") {{ setOnAction(e -> FXCollections.reverse(buttons)); }},
+                createButton("by Red", comparator(Color::getRed).reversed()),
+                createButton("by Green", comparator(Color::getGreen).reversed()),
+                createButton("by Blue", comparator(Color::getBlue).reversed()),
+                createButton("by Gray", comparator(c -> c.grayscale().getGreen()).reversed()),
+                createButton("by Hue", comparator(Color::getHue).reversed()),
+                createButton("by Saturation", comparator(Color::getSaturation).reversed()),
+                createButton("by Brightness", comparator(Color::getBrightness).reversed())
+                );
         getChildren().addAll(sort, tilePane);
+    }
+    private Button createButton(String title, Comparator<Button> comparator) {
+        final Button button = new Button(title);
+        button.setOnAction(e -> FXCollections.sort(buttons, comparator));
+        return button;
     }
     private static Color getColor(Button button) {
         return (Color)button.getBackground().getFills().get(0).getFill();
+    }
+    private static Comparator<Button> comparator(Function<Color, Double> selector) {
+        return Comparator.comparingDouble(b -> selector.apply(getColor(b)));
     }
 }
