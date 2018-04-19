@@ -10,8 +10,9 @@ repositories {
     jcenter()
 }
 
-group = 'com.github.am4dr'
-version = '0.1.0-SNAPSHOT'
+group = 'com.github.am4dr.javafx'
+version = '0.1.0'
+archivesBaseName = 'gui-sample-viewer'
 
 ext {
     jdkVersion = JavaVersion.VERSION_1_10
