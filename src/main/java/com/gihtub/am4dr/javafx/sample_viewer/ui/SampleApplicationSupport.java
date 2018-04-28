@@ -1,6 +1,6 @@
 package com.gihtub.am4dr.javafx.sample_viewer.ui;
 
-import com.gihtub.am4dr.javafx.sample_viewer.ClassPathWatcher;
+import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareURLClassLoader;
 import javafx.application.Application;
 
 import java.io.File;
@@ -19,7 +19,7 @@ public abstract class SampleApplicationSupport extends Application {
         paths = Arrays.stream(getParameters().getNamed().get("path").split(File.pathSeparator))
                 .map(Paths::get).distinct().collect(Collectors.toList());
     }
-    protected ClassPathWatcher createWatcher() {
-        return new ClassPathWatcher(paths);
+    protected UpdateAwareURLClassLoader createWatcher() {
+        return new UpdateAwareURLClassLoader(paths);
     }
 }

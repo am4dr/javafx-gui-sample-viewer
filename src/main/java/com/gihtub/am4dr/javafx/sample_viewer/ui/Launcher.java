@@ -1,10 +1,7 @@
 package com.gihtub.am4dr.javafx.sample_viewer.ui;
 
-import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareNode;
 import javafx.application.Application;
 import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 
 import java.io.File;
 import java.net.URL;

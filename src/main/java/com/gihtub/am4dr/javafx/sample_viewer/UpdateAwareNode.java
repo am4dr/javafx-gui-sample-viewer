@@ -103,7 +103,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
     private void watchReloadEvent(URLClassLoader loader) {
-        if (!(loader instanceof ClassPathWatcher)) {
+        if (!(loader instanceof UpdateAwareURLClassLoader)) {
             return;
         }
         final WaitLastProcessor<Path> lastProcessor = new WaitLastProcessor<>(executor, waitTimeToDetermineTheLastEvent, TimeUnit.MILLISECONDS);
@@ -114,7 +114,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
                 subscription.request(1);
             }
         });
-        final Flow.Publisher<Path> changePublisher = ((ClassPathWatcher) loader).getChangePublisher();
+        final Flow.Publisher<Path> changePublisher = ((UpdateAwareURLClassLoader) loader).getChangePublisher();
         changePublisher.subscribe(lastProcessor);
         changePublisher.subscribe(new SimpleSubscriber<>() {
             @Override

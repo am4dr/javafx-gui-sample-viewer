@@ -16,16 +16,16 @@ import java.util.concurrent.SubmissionPublisher;
 
 import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
 
-public final class ClassPathWatcher extends URLClassLoader {
+public final class UpdateAwareURLClassLoader extends URLClassLoader {
 
     private final ExecutorService executor = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
     private final SubmissionPublisher<Path> publisher = new SubmissionPublisher<>(executor, 10);
     private final WatchService watchService;
 
-    public ClassPathWatcher() {
+    public UpdateAwareURLClassLoader() {
         this(List.of());
     }
-    public ClassPathWatcher(List<Path> paths) {
+    public UpdateAwareURLClassLoader(List<Path> paths) {
         super(new URL[0]);
         paths.stream().map(uncheckedFunction(path -> path.toUri().toURL())).forEach(this::addURL);
         try {
