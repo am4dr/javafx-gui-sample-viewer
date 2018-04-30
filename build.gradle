@@ -11,7 +11,7 @@ repositories {
 }
 
 group = 'com.github.am4dr.javafx'
-version = '0.2.0'
+version = '0.2.0-SNAPSHOT'
 archivesBaseName = 'gui-sample-viewer'
 
 ext {
@@ -46,8 +46,7 @@ task runUiSamples(type: JavaExec) {
 
 javadoc {
     options {
-        links 'https://docs.gradle.org/4.6/javadoc'
-        links 'https://docs.oracle.com/javase/9/docs/api'
+        links 'https://docs.oracle.com/javase/10/docs/api'
         locale 'en_US'
         addBooleanOption('html5', true)
     }
