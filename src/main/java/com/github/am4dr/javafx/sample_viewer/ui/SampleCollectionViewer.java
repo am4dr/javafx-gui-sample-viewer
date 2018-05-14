@@ -1,4 +1,4 @@
-package com.gihtub.am4dr.javafx.sample_viewer.ui;
+package com.github.am4dr.javafx.sample_viewer.ui;
 
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;

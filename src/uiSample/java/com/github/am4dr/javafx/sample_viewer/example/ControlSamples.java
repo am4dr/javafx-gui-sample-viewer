@@ -1,10 +1,10 @@
-package com.gihtub.am4dr.javafx.sample_viewer.example;
+package com.github.am4dr.javafx.sample_viewer.example;
 
-import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareNode;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollection;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.StatusBorderedPane;
+import com.github.am4dr.javafx.sample_viewer.UpdateAwareNode;
+import com.github.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
+import com.github.am4dr.javafx.sample_viewer.ui.SampleCollection;
+import com.github.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
+import com.github.am4dr.javafx.sample_viewer.ui.StatusBorderedPane;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;

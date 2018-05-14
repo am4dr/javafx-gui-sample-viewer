@@ -1,6 +1,6 @@
-package com.gihtub.am4dr.javafx.sample_viewer;
+package com.github.am4dr.javafx.sample_viewer;
 
-import com.gihtub.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
+import com.github.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 
-import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
+import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
 
 public final class UpdateAwareURLClassLoader extends URLClassLoader {
 

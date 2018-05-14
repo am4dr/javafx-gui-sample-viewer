@@ -1,6 +1,6 @@
-package com.gihtub.am4dr.javafx.sample_viewer.ui;
+package com.github.am4dr.javafx.sample_viewer.ui;
 
-import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareURLClassLoader;
+import com.github.am4dr.javafx.sample_viewer.UpdateAwareURLClassLoader;
 import javafx.application.Application;
 
 import java.io.File;

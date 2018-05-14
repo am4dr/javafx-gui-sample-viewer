@@ -1,4 +1,4 @@
-package com.gihtub.am4dr.javafx.sample_viewer.ui;
+package com.github.am4dr.javafx.sample_viewer.ui;
 
 import javafx.application.Application;
 import javafx.scene.Node;
@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
+import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
 
 public final class Launcher {
 

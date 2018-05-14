@@ -1,9 +1,9 @@
 package sample.target;
 
-import com.gihtub.am4dr.javafx.sample_viewer.UpdateAwareNode;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollection;
-import com.gihtub.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
+import com.github.am4dr.javafx.sample_viewer.UpdateAwareNode;
+import com.github.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
+import com.github.am4dr.javafx.sample_viewer.ui.SampleCollection;
+import com.github.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 

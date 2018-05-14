@@ -1,8 +1,9 @@
-package com.gihtub.am4dr.javafx.sample_viewer;
+package com.github.am4dr.javafx.sample_viewer;
 
-import com.gihtub.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
-import com.gihtub.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
-import com.gihtub.am4dr.javafx.sample_viewer.internal.WaitLastProcessor;
+import com.github.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
+import com.github.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
+import com.github.am4dr.javafx.sample_viewer.internal.UncheckedConsumer;
+import com.github.am4dr.javafx.sample_viewer.internal.WaitLastProcessor;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -21,8 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedConsumer.uncheckedConsumer;
-import static com.gihtub.am4dr.javafx.sample_viewer.internal.UncheckedRunnable.uncheckedRunnable;
+import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedRunnable.uncheckedRunnable;
 
 /**
  *
@@ -71,7 +71,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     protected R computeValue() {
         final URLClassLoader newLoader = newClassLoader();
         createNode(newLoader).ifPresentOrElse(n -> {
-            getCurrentNodeClassLoader().ifPresent(uncheckedConsumer(URLClassLoader::close));
+            getCurrentNodeClassLoader().ifPresent(UncheckedConsumer.uncheckedConsumer(URLClassLoader::close));
             this.node = n;
         }, uncheckedRunnable(newLoader::close));
         return this.node;

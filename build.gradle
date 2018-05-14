@@ -40,8 +40,8 @@ dependencies {
 }
 task runUiSamples(type: JavaExec) {
     classpath = sourceSets.uiSample.runtimeClasspath
-    main = 'com.gihtub.am4dr.javafx.sample_viewer.ui.Launcher'
-    args = ['com.gihtub.am4dr.javafx.sample_viewer.example.ControlSamples']
+    main = 'com.github.am4dr.javafx.sample_viewer.ui.Launcher'
+    args = ['com.github.am4dr.javafx.sample_viewer.example.ControlSamples']
 }
 
 javadoc {
