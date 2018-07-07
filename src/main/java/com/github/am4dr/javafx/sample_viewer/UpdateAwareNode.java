@@ -13,6 +13,7 @@ import javafx.scene.Node;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
@@ -35,6 +36,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     private final String name;
     private final Supplier<URLClassLoader> cls;
     private final Consumer<? super R> initializer;
+    private final Map<String, Object> contextMap;
     private R node;
     private final int waitTimeToDetermineTheLastEvent;
     private static final int defaultWaitTimeMillis = 100;
@@ -51,6 +53,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         this.cls = checkedBuilder.classLoaderSupplier;
         this.initializer = checkedBuilder.initializer;
         this.waitTimeToDetermineTheLastEvent = checkedBuilder.waitTimeMillis;
+        this.contextMap = checkedBuilder.contextMap;
     }
     public static <R extends Node> UpdateAwareNode<R> build(UnaryOperator<Builder<R>> configuration) {
         return configuration.apply(new Builder<>()).build();
@@ -87,6 +90,9 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         try {
             final R node = (R) loader.loadClass(name).getDeclaredConstructor().newInstance();
             initializer.accept(node);
+            if (node instanceof RestorableNode) {
+                ((RestorableNode)node).restore(contextMap);
+            }
             status.set(STATUS.OK);
             return Optional.of(node);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
@@ -136,15 +142,17 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         private final Supplier<URLClassLoader> classLoaderSupplier;
         private final Consumer<? super R> initializer;
         private final int waitTimeMillis;
+        private final Map<String, Object> contextMap;
 
         public Builder() {
-            this(null, null, null, defaultWaitTimeMillis);
+            this(null, null, null, defaultWaitTimeMillis, Map.of());
         }
-        public Builder(String className, Supplier<URLClassLoader> classLoaderSupplier, Consumer<? super R> initializer, int waitTimeMillis) {
+        public Builder(String className, Supplier<URLClassLoader> classLoaderSupplier, Consumer<? super R> initializer, int waitTimeMillis, Map<String, Object> contextMap) {
             this.className = className;
             this.classLoaderSupplier = classLoaderSupplier;
             this.initializer = initializer;
             this.waitTimeMillis = waitTimeMillis;
+            this.contextMap = contextMap;
         }
 
         public Builder<R> check() {
@@ -167,16 +175,19 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         }
 
         public Builder<R> name(String className) {
-            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis, contextMap);
         }
         public Builder<R> classloader(Supplier<URLClassLoader> classLoaderSupplier) {
-            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis, contextMap);
         }
         public Builder<R> initializer(Consumer<? super R> initializer) {
-            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis, contextMap);
         }
         public Builder<R> waitTimeMillis(int waitTimeMillis) {
-            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis);
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis, contextMap);
+        }
+        public Builder<R> context(Map<String, Object> contextMap) {
+            return new Builder<R>(className, classLoaderSupplier, initializer, waitTimeMillis, contextMap);
         }
         public Builder<R> type(Class<? extends R> type) {
             return name(type.getName());
