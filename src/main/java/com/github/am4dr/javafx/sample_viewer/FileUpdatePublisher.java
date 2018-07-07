@@ -16,7 +16,7 @@ import java.util.concurrent.SubmissionPublisher;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
-public class FileUpdatePublisher implements Flow.Publisher<Path> {
+public final class FileUpdatePublisher implements Flow.Publisher<Path> {
 
     private final ExecutorService executor = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
     private SubmissionPublisher<Path> submission = new SubmissionPublisher<>(executor, 10);
