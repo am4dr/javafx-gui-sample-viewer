@@ -20,11 +20,13 @@ ext {
     libraries = [
             'junit_api': 'org.junit.jupiter:junit-jupiter-api:'+junit_version,
             'junit_runtime': 'org.junit.jupiter:junit-jupiter-engine:'+junit_version,
+            'jimfs': 'com.google.jimfs:jimfs:1.1',
     ]
     samples = ['colorful-buttons', 'colorful-buttons_with-sourceset-separation'].collect { project ":$it" }
 }
 
 dependencies {
+    testImplementation libraries.jimfs
     testImplementation libraries.junit_api
     testRuntime libraries.junit_runtime
 }
