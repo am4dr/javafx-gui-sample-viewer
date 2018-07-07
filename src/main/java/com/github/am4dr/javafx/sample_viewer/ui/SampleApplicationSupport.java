@@ -13,13 +13,21 @@ import java.util.stream.Collectors;
 public abstract class SampleApplicationSupport extends Application {
 
     protected List<Path> paths;
+    protected List<Path> loadOnlyPaths;
+
     @Override
     public void init() throws Exception {
         super.init();
-        paths = Arrays.stream(getParameters().getNamed().get("path").split(File.pathSeparator))
-                .map(Paths::get).distinct().collect(Collectors.toList());
+        paths = parseToPathList(getParameters().getNamed().get("path"));
+        loadOnlyPaths = parseToPathList(getParameters().getNamed().get("load-only-path"));
     }
     protected UpdateAwareURLClassLoader createWatcher() {
-        return new UpdateAwareURLClassLoader(paths);
+        return new UpdateAwareURLClassLoader(paths, loadOnlyPaths);
+    }
+
+    private static List<Path> parseToPathList(String paths) {
+        if (paths == null) return List.of();
+        return Arrays.stream(paths.split(File.pathSeparator))
+                .map(Paths::get).distinct().collect(Collectors.toList());
     }
 }

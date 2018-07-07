@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.Flow;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
 
@@ -15,12 +17,22 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
 
     private final FileUpdatePublisher publisher = new FileUpdatePublisher();
 
+    private final List<Path> watchPaths;
+    private final List<Path> loadOnlyPaths;
+
     public UpdateAwareURLClassLoader() {
         this(List.of());
     }
     public UpdateAwareURLClassLoader(List<Path> paths) {
+        this(paths, List.of());
+    }
+    public UpdateAwareURLClassLoader(List<Path> watchPaths, List<Path> loadOnlyPaths) {
         super(new URL[0]);
-        paths.stream().map(uncheckedFunction(path -> path.toUri().toURL())).forEach(this::addURL);
+        this.watchPaths = watchPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
+        this.loadOnlyPaths = loadOnlyPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
+        Stream.concat(this.watchPaths.stream(), this.loadOnlyPaths.stream())
+                .map(uncheckedFunction(path -> path.toUri().toURL()))
+                .forEach(this::addURL);
     }
 
     @Override
@@ -43,7 +55,9 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
                 final Path path = Paths.get(aClass.getProtectionDomain().getCodeSource().getLocation().toURI())
                         .resolve(aClass.getName().replace(".", "/") + ".class")
                         .toRealPath();
-                publisher.addDirectory(path.getParent());
+                if (watchPaths.stream().anyMatch(path::startsWith)) {
+                    publisher.addDirectory(path.getParent());
+                }
             } catch (URISyntaxException | IOException e) {
                 e.printStackTrace();
             }
