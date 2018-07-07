@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id 'maven'
+    id 'maven-publish'
 
     id 'com.github.ben-manes.versions' version '0.20.0'
     id 'com.jfrog.bintray' version '1.8.3'
@@ -11,8 +11,7 @@ repositories {
 }
 
 group = 'com.github.am4dr.javafx'
-version = '0.4.0-SNAPSHOT'
-archivesBaseName = 'gui-sample-viewer'
+version = '0.4.0'
 
 ext {
     jdkVersion = JavaVersion.VERSION_1_10
@@ -55,11 +54,23 @@ javadoc {
 }
 task sourceJar(type: Jar) {
     from sourceSets.main.allSource
-    classifier = 'sources'
 }
 task javadocJar(type: Jar) {
     from javadoc
-    classifier = 'javadoc'
+}
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'gui-sample-viewer'
+            from components.java
+            artifact sourceJar {
+                classifier "sources"
+            }
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+        }
+    }
 }
 configurations {
     jarForBintrayUpload
@@ -85,7 +96,7 @@ bintray {
             released  = new Date()
         }
     }
-    configurations = ['jarForBintrayUpload']
+    publications = ['mavenJava']
 }
 
 
