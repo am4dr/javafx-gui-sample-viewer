@@ -89,6 +89,11 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     private Optional<R> createNode(ClassLoader loader) {
         try {
             final R node = (R) loader.loadClass(name).getDeclaredConstructor().newInstance();
+            // node must be loaded by the specified ClassLoader
+            if (node.getClass().getClassLoader() != loader) {
+                status.set(STATUS.ERROR);
+                return Optional.empty();
+            }
             initializer.accept(node);
             if (node instanceof RestorableNode) {
                 ((RestorableNode)node).restore(contextMap);
