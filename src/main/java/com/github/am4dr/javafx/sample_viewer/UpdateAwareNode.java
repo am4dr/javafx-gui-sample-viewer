@@ -66,32 +66,37 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
     @Override
     protected void onInvalidating() {
-        super.onInvalidating();
         status.set(STATUS.RELOADING);
+        super.onInvalidating();
     }
 
     @Override
     protected R computeValue() {
+        if (node != null && status.get() == STATUS.OK) {
+            return node;
+        }
+
         final URLClassLoader newLoader = cls.get();
         final Class<R> rClass = loadClass(newLoader);
         // node must be loaded by the specified ClassLoader
         if (rClass == null || rClass.getClassLoader() != newLoader) {
             status.set(STATUS.ERROR);
             uncheckedRunnable(newLoader::close).run();
-            return this.node;
+            return node;
         }
 
-        final Optional<R> node = createNode(rClass);
-        node.ifPresentOrElse(n -> {
-            watchReloadEvent(newLoader);
+        createNode(rClass).ifPresentOrElse(n -> {
+            if ((newLoader instanceof UpdateAwareURLClassLoader)) {
+                watchReloadEvent((UpdateAwareURLClassLoader) newLoader);
+            }
             getCurrentNodeClassLoader().ifPresent(uncheckedConsumer(URLClassLoader::close));
-            this.node = n;
+            node = n;
             status.set(STATUS.OK);
         }, uncheckedRunnable(() -> {
             status.set(STATUS.ERROR);
             newLoader.close();
         }));
-        return this.node;
+        return node;
     }
 
     private Class<R> loadClass(ClassLoader loader) {
@@ -122,10 +127,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     }
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
-    private void watchReloadEvent(URLClassLoader loader) {
-        if (!(loader instanceof UpdateAwareURLClassLoader)) {
-            return;
-        }
+    private void watchReloadEvent(UpdateAwareURLClassLoader loader) {
         final WaitLastProcessor<Path> lastProcessor = new WaitLastProcessor<>(executor, waitTimeToDetermineTheLastEvent, TimeUnit.MILLISECONDS);
         lastProcessor.subscribe(new SimpleSubscriber<>() {
             @Override
@@ -134,7 +136,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
                 subscription.request(1);
             }
         });
-        final Flow.Publisher<Path> changePublisher = ((UpdateAwareURLClassLoader) loader).getChangePublisher();
+        final Flow.Publisher<Path> changePublisher = loader.getChangePublisher();
         changePublisher.subscribe(lastProcessor);
         changePublisher.subscribe(new SimpleSubscriber<>() {
             @Override
