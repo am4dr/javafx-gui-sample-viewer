@@ -2,7 +2,6 @@ package com.github.am4dr.javafx.sample_viewer;
 
 import com.github.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
 import com.github.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
-import com.github.am4dr.javafx.sample_viewer.internal.UncheckedConsumer;
 import com.github.am4dr.javafx.sample_viewer.internal.WaitLastProcessor;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
@@ -23,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedConsumer.uncheckedConsumer;
 import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedRunnable.uncheckedRunnable;
 
 /**
@@ -72,44 +72,53 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
     @Override
     protected R computeValue() {
-        final URLClassLoader newLoader = newClassLoader();
-        createNode(newLoader).ifPresentOrElse(n -> {
-            getCurrentNodeClassLoader().ifPresent(UncheckedConsumer.uncheckedConsumer(URLClassLoader::close));
+        final URLClassLoader newLoader = cls.get();
+        final Class<R> rClass = loadClass(newLoader);
+        // node must be loaded by the specified ClassLoader
+        if (rClass == null || rClass.getClassLoader() != newLoader) {
+            status.set(STATUS.ERROR);
+            uncheckedRunnable(newLoader::close).run();
+            return this.node;
+        }
+
+        final Optional<R> node = createNode(rClass);
+        node.ifPresentOrElse(n -> {
+            watchReloadEvent(newLoader);
+            getCurrentNodeClassLoader().ifPresent(uncheckedConsumer(URLClassLoader::close));
             this.node = n;
-        }, uncheckedRunnable(newLoader::close));
+            status.set(STATUS.OK);
+        }, uncheckedRunnable(() -> {
+            status.set(STATUS.ERROR);
+            newLoader.close();
+        }));
         return this.node;
     }
 
-    private URLClassLoader newClassLoader() {
-        final URLClassLoader loader = cls.get();
-        watchReloadEvent(loader);
-        return loader;
-    }
-
-    private Optional<R> createNode(ClassLoader loader) {
+    private Class<R> loadClass(ClassLoader loader) {
         try {
-            final R node = (R) loader.loadClass(name).getDeclaredConstructor().newInstance();
-            // node must be loaded by the specified ClassLoader
-            if (node.getClass().getClassLoader() != loader) {
-                status.set(STATUS.ERROR);
-                return Optional.empty();
-            }
+            return (Class<R>) loader.loadClass(name);
+        } catch (ClassNotFoundException e) {
+            // nothing to do
+        }
+        return null;
+    }
+    private Optional<R> createNode(Class<R> clazz) {
+        R node = null;
+        try {
+            node = clazz.getDeclaredConstructor().newInstance();
             initializer.accept(node);
             if (node instanceof RestorableNode) {
                 ((RestorableNode)node).restore(contextMap);
             }
-            status.set(STATUS.OK);
-            return Optional.of(node);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
-            status.set(STATUS.ERROR);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            // nothing to do
         }
-        return Optional.empty();
+        return Optional.ofNullable(node);
     }
 
     private Optional<URLClassLoader> getCurrentNodeClassLoader() {
         return Optional.ofNullable(node)
-                .map(R::getClass).map(Class::getClassLoader)
-                .map(URLClassLoader.class::cast);
+                .map(it -> (URLClassLoader)it.getClass().getClassLoader());
     }
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
