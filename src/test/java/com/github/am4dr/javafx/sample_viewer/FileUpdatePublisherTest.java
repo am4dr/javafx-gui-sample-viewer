@@ -8,9 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,19 +21,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileUpdatePublisherTest {
 
-    private FileSystem jimfs;
+    private FileSystem testFs;
     private Path testDir;
     private FileUpdatePublisher fileUpdatePublisher;
 
     @BeforeEach
     void beforeEach() throws IOException {
+        setupJimfs();
+        Files.createDirectories(testDir);
+
+        fileUpdatePublisher = new FileUpdatePublisher();
+    }
+
+    private void setupJimfs() {
         final Configuration jimfsConfig = Configuration.unix().toBuilder()
                 .setWatchServiceConfiguration(WatchServiceConfiguration.polling(50, TimeUnit.MILLISECONDS))
                 .build();
-        jimfs = Jimfs.newFileSystem(jimfsConfig);
-        testDir = jimfs.getPath("test");
-        Files.createDirectories(testDir);
-        fileUpdatePublisher = new FileUpdatePublisher();
+        testFs = Jimfs.newFileSystem(jimfsConfig);
+        testDir = testFs.getPath("test");
+    }
+
+    private void setupDefaultfs() {
+        testFs = FileSystems.getDefault();
+        testDir = Paths.get("build", "test", "fs-test");
     }
 
     @AfterEach
@@ -53,6 +61,25 @@ class FileUpdatePublisherTest {
 
         final Path newFile = testDir.resolve("newFile");
         Files.createFile(newFile);
+
+        Thread.sleep(100);
+        final Optional<Path> last = collector.getLast();
+        assertTrue(last.isPresent());
+    }
+
+    // jimfs and default fs have different behavior.
+    @Test
+    void watchingNotExistDirectoryTest() throws IOException, InterruptedException {
+        final FlowCollector<Path> collector = new FlowCollector<>(Collections.synchronizedList(new ArrayList<>()));
+        fileUpdatePublisher.subscribe(collector);
+
+        final Path notFoundDir = Files.createDirectories(testDir.resolve("not-found"));
+        fileUpdatePublisher.addDirectory(notFoundDir);
+        Files.delete(notFoundDir);
+
+        final Path recreated = Files.createDirectories(testDir.resolve("not-found"));
+        fileUpdatePublisher.addDirectory(recreated);
+        Files.createFile(recreated.resolve("newFle"));
 
         Thread.sleep(100);
         final Optional<Path> last = collector.getLast();
