@@ -29,7 +29,6 @@ import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedRunnable.u
  *
  *
  * This class may call {@link Platform#runLater(Runnable)} internally.
- * @param <R>
  */
 public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
@@ -79,9 +78,15 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         final URLClassLoader newLoader = cls.get();
         final Class<R> rClass = loadClass(newLoader);
         // node must be loaded by the specified ClassLoader
-        if (rClass == null || rClass.getClassLoader() != newLoader) {
+        final boolean loadedByParentLoader = rClass != null && rClass.getClassLoader() != newLoader;
+        if (rClass == null || loadedByParentLoader) {
             status.set(STATUS.ERROR);
             uncheckedRunnable(newLoader::close).run();
+            if (loadedByParentLoader) {
+                getCurrentNodeClassLoader()
+                        .filter(it -> it instanceof UpdateAwareURLClassLoader)
+                        .ifPresent(it -> ((UpdateAwareURLClassLoader) it).updateWatchKeys());
+            }
             return node;
         }
 
@@ -93,6 +98,9 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
             node = n;
             status.set(STATUS.OK);
         }, uncheckedRunnable(() -> {
+            getCurrentNodeClassLoader()
+                    .filter(it -> it instanceof UpdateAwareURLClassLoader)
+                    .ifPresent(it -> ((UpdateAwareURLClassLoader) it).updateWatchKeys());
             status.set(STATUS.ERROR);
             newLoader.close();
         }));

@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,14 +40,23 @@ public final class FileUpdatePublisher implements Flow.Publisher<Path> {
     }
 
     private final Map<FileSystem, WatchService> watchServices = Collections.synchronizedMap(new HashMap<>());
-    private final Map<WatchKey, Path> watchedDirs = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Path, WatchKey> watchedDirs = Collections.synchronizedMap(new HashMap<>());
 
     public void addDirectory(Path path) {
         final Path absolutePath = path.toAbsolutePath();
+        if (Files.notExists(absolutePath)) {
+            try {
+                Files.createDirectories(absolutePath);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
         if (!Files.isDirectory(absolutePath)) {
             throw new IllegalArgumentException("path must be a directory");
         }
-        if (watchedDirs.containsValue(absolutePath)) {
+
+        final WatchKey oldKey = watchedDirs.get(absolutePath);
+        if (oldKey != null && oldKey.isValid()) {
             return;
         }
         final var fileSystem = absolutePath.getFileSystem();
@@ -57,7 +67,7 @@ public final class FileUpdatePublisher implements Flow.Publisher<Path> {
         });
         try {
             final WatchKey key = absolutePath.register(watchService, ENTRY_MODIFY, ENTRY_CREATE);
-            watchedDirs.put(key, absolutePath);
+            watchedDirs.put(absolutePath, key);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -72,10 +82,15 @@ public final class FileUpdatePublisher implements Flow.Publisher<Path> {
                 } catch (InterruptedException e) {
                     break;
                 }
-                key.pollEvents().stream()
+                final List<WatchEvent<?>> events = key.pollEvents();
+                events.stream()
                         .map(WatchEvent::context)
                         .map(Path.class::cast)
                         .forEach(submission::submit);
+                // XXX
+                if (events.isEmpty()) {
+                    submission.submit((Path)key.watchable());
+                }
                 key.reset();
             }
         });
@@ -87,5 +102,18 @@ public final class FileUpdatePublisher implements Flow.Publisher<Path> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public void reactivateKeys() {
+        watchedDirs.entrySet().stream()
+                .filter(it -> !it.getValue().isValid())
+                .forEach(it -> {
+                    try {
+                        Files.createDirectories(it.getKey());
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                    addDirectory(it.getKey());
+                });
     }
 }

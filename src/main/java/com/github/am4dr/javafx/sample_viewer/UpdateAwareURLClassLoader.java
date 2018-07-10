@@ -4,13 +4,18 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedConsumer.uncheckedConsumer;
 import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
 
 public final class UpdateAwareURLClassLoader extends URLClassLoader {
@@ -28,11 +33,14 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
     }
     public UpdateAwareURLClassLoader(List<Path> watchPaths, List<Path> loadOnlyPaths) {
         super(new URL[0]);
-        this.watchPaths = watchPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
-        this.loadOnlyPaths = loadOnlyPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
-        Stream.concat(this.watchPaths.stream(), this.loadOnlyPaths.stream())
+        Stream.concat(watchPaths.stream(), loadOnlyPaths.stream())
+                .peek(uncheckedConsumer(it -> { if (Files.notExists(it)) {
+                    Files.createDirectories(it);
+                }}))
                 .map(uncheckedFunction(path -> path.toUri().toURL()))
                 .forEach(this::addURL);
+        this.watchPaths = watchPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
+        this.loadOnlyPaths = loadOnlyPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
     }
 
     @Override
@@ -41,6 +49,7 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
         publisher.shutdown();
     }
 
+    private Set<Path> watchedDirectories = Collections.synchronizedSet(new HashSet<>());
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {
@@ -56,6 +65,7 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
                         .resolve(aClass.getName().replace(".", "/") + ".class")
                         .toRealPath();
                 if (watchPaths.stream().anyMatch(path::startsWith)) {
+                    watchedDirectories.add(path.getParent());
                     publisher.addDirectory(path.getParent());
                 }
             } catch (URISyntaxException | IOException e) {
@@ -74,5 +84,9 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
 
     public Flow.Publisher<Path> getChangePublisher() {
         return publisher;
+    }
+
+    public void updateWatchKeys() {
+        publisher.reactivateKeys();
     }
 }
