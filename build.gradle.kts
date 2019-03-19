@@ -13,7 +13,6 @@ plugins {
 group = "com.github.am4dr.javafx"
 version = "0.4.3-SNAPSHOT"
 
-
 repositories {
     jcenter()
 }
@@ -54,18 +53,14 @@ tasks {
         useJUnitPlatform()
     }
     javadoc {
-        options {
-            // Expose StandardJavadocDocletOptions in Javadocs for better compatibility with Kotlin DSL · Issue #7038 · gradle/gradle
-            // https://github.com/gradle/gradle/issues/7038
-            this as StandardJavadocDocletOptions
-            links("https://docs.oracle.com/en/java/javase/11/docs/api")
-            locale = "en_US"
-            //addBooleanOption("html5", true)
-        }
         doFirst {
             val modulePaths = classpath.asPath
             classpath = files()
+            // Expose StandardJavadocDocletOptions in Javadocs for better compatibility with Kotlin DSL · Issue #7038 · gradle/gradle
+            // https://github.com/gradle/gradle/issues/7038
             options { this as StandardJavadocDocletOptions
+                links("https://docs.oracle.com/en/java/javase/11/docs/api")
+                locale = "en_US"
                 addStringOption("-module-path", modulePaths)
             }
         }
