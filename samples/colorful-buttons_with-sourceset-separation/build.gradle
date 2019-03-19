@@ -7,7 +7,7 @@ sourceSets {  // declare source-set for UI sample application
 } // put UI sample application codes into src/<source-set name>/java
 dependencies {
     uiSamplesCompile project(':') // add javafx-gui-sample-viewer
-    uiSamplesCompile sourceSets.main.output // and target classes
+    uiSamplesCompile sourceSets.main.runtimeClasspath // and target classes
 }
 task runSampleWithLauncher(type: JavaExec) {
     classpath sourceSets.uiSamples.runtimeClasspath

@@ -57,7 +57,7 @@ public final class StatusBorderedPane extends StackPane {
                 return Color.LIMEGREEN;
             case ERROR:
                 return Color.DARKRED;
-            case UPDATE_AWARE:
+            case UPDATE_DETECTED:
                 return Color.DARKORANGE;
             case RELOADING:
                 return Color.ORANGE;

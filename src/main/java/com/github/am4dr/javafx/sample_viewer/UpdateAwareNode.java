@@ -9,6 +9,7 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Node;
 
+import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -75,46 +76,48 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
             return node;
         }
 
-        final URLClassLoader newLoader = cls.get();
-        final Class<R> rClass = loadClass(newLoader);
-        // node must be loaded by the specified ClassLoader
-        final boolean loadedByParentLoader = rClass != null && rClass.getClassLoader() != newLoader;
-        if (rClass == null || loadedByParentLoader) {
+        final Class<R> rClass = loadClassByNewLoaderOrNull();
+        if (rClass == null) {
             status.set(STATUS.ERROR);
-            uncheckedRunnable(newLoader::close).run();
-            if (loadedByParentLoader) {
-                getCurrentNodeClassLoader()
-                        .filter(it -> it instanceof UpdateAwareURLClassLoader)
-                        .ifPresent(it -> ((UpdateAwareURLClassLoader) it).updateWatchKeys());
-            }
             return node;
         }
 
-        createNode(rClass).ifPresentOrElse(n -> {
-            if ((newLoader instanceof UpdateAwareURLClassLoader)) {
-                watchReloadEvent((UpdateAwareURLClassLoader) newLoader);
+        final var newClassLoader = rClass.getClassLoader();
+        createNode(rClass).ifPresentOrElse(newNode -> {
+            if ((newClassLoader instanceof UpdateAwareURLClassLoader)) {
+                watchReloadEvent((UpdateAwareURLClassLoader) newClassLoader);
             }
             getCurrentNodeClassLoader().ifPresent(uncheckedConsumer(URLClassLoader::close));
-            node = n;
+            node = newNode;
             status.set(STATUS.OK);
         }, uncheckedRunnable(() -> {
-            getCurrentNodeClassLoader()
-                    .filter(it -> it instanceof UpdateAwareURLClassLoader)
-                    .ifPresent(it -> ((UpdateAwareURLClassLoader) it).updateWatchKeys());
+            refreshWatchKeys();
+            if (newClassLoader instanceof Closeable) {
+                ((Closeable) newClassLoader).close();
+            }
             status.set(STATUS.ERROR);
-            newLoader.close();
         }));
         return node;
     }
 
-    private Class<R> loadClass(ClassLoader loader) {
+    private Class<R> loadClassByNewLoaderOrNull() {
+        final URLClassLoader newLoader = cls.get();
         try {
-            return (Class<R>) loader.loadClass(name);
+            final Class<R> rClass = (Class<R>)newLoader.loadClass(name);
+            // node must be loaded by the specified ClassLoader
+            final var loadedByParentLoader = rClass.getClassLoader() != newLoader;
+            if (loadedByParentLoader) {
+                uncheckedRunnable(newLoader::close).run();
+                refreshWatchKeys();
+                return null;
+            }
+            return rClass;
         } catch (ClassNotFoundException e) {
             // nothing to do
         }
         return null;
     }
+
     private Optional<R> createNode(Class<R> clazz) {
         R node = null;
         try {
@@ -133,6 +136,11 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         return Optional.ofNullable(node)
                 .map(it -> (URLClassLoader)it.getClass().getClassLoader());
     }
+    private void refreshWatchKeys() {
+        getCurrentNodeClassLoader()
+                .filter(it -> it instanceof UpdateAwareURLClassLoader)
+                .ifPresent(it -> ((UpdateAwareURLClassLoader) it).updateWatchKeys());
+    }
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
     private void watchReloadEvent(UpdateAwareURLClassLoader loader) {
@@ -149,7 +157,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         changePublisher.subscribe(new SimpleSubscriber<>() {
             @Override
             public void onNext(Path item) {
-                Platform.runLater(() -> UpdateAwareNode.this.status.set(STATUS.UPDATE_AWARE));
+                Platform.runLater(() -> UpdateAwareNode.this.status.set(STATUS.UPDATE_DETECTED));
                 subscription.request(1);
             }
         });
@@ -157,7 +165,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
 
     public enum STATUS {
-        OK, ERROR, RELOADING, UPDATE_AWARE
+        OK, ERROR, RELOADING, UPDATE_DETECTED
     }
 
     public static final class Builder<R extends Node> {
