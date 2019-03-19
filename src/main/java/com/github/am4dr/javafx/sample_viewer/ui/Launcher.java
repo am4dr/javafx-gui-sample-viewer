@@ -22,19 +22,21 @@ public final class Launcher {
     public static void main(String[] args) throws ClassNotFoundException {
         final var parsed = Args.parse(args);
 
-        Application.launch(parsed.getLaunchTarget(), parsed.toOptions());
+        parsed.launch();
     }
+
 
     public static final class Args {
 
         private final String targetFQCN;
         private final List<String> paths;
-        private final Class<?> targetClass;
 
-        public Args(String targetFQCN, List<String> paths) throws ClassNotFoundException {
+        public Args(String targetFQCN, List<String> paths) {
             this.targetFQCN = targetFQCN;
             this.paths = paths;
-            targetClass = getTargetClass();
+        }
+        public Args(String targetFQCN, String... paths) {
+            this(targetFQCN, List.of(paths));
         }
 
         public String[] toLauncherArgs() {
@@ -44,7 +46,7 @@ public final class Launcher {
             return args.toArray(new String[] {});
         }
 
-        public static Args parse(String[] args) throws ClassNotFoundException {
+        public static Args parse(String[] args) {
             if (args.length < 1) {
                 throw new IllegalArgumentException("target FQCN is not specified");
             }
@@ -52,8 +54,19 @@ public final class Launcher {
             return new Args(args[0], paths);
         }
 
-        public String[] toOptions() {
-            final ArrayList<String> opts = new ArrayList<>();
+
+        public void launch() throws ClassNotFoundException {
+            final var targetClass = getTargetClass();
+            Application.launch(getLaunchTarget(targetClass), toOptions(targetClass));
+        }
+
+        private Class<?> getTargetClass() throws ClassNotFoundException {
+            final URL[] urls = paths.stream().map(Paths::get).map(uncheckedFunction(Path::toRealPath)).map(uncheckedFunction(p -> p.toUri().toURL())).toArray(URL[]::new);
+            return new URLClassLoader(urls).loadClass(targetFQCN);
+        }
+
+        private String[] toOptions(Class<?> targetClass) {
+            final var opts = new ArrayList<String>();
             if (SampleApplicationSupport.class.isAssignableFrom(targetClass)) {
                 opts.add("--"+PATH_PARAM_NAME+"="+String.join(File.pathSeparator, paths));
             }
@@ -64,13 +77,7 @@ public final class Launcher {
             return opts.toArray(new String[] {});
         }
 
-        public Class<?> getTargetClass() throws ClassNotFoundException {
-            final URL[] urls = paths.stream().map(Paths::get).map(uncheckedFunction(Path::toRealPath)).map(uncheckedFunction(p -> p.toUri().toURL())).toArray(URL[]::new);
-            final Class<?> aClass = new URLClassLoader(urls).loadClass(targetFQCN);
-            return aClass;
-        }
-
-        public Class<? extends Application> getLaunchTarget() {
+        private Class<? extends Application> getLaunchTarget(Class<?> targetClass) {
             if (SampleApplicationSupport.class.isAssignableFrom(targetClass)) {
                 return (Class<Application>) targetClass;
             }
