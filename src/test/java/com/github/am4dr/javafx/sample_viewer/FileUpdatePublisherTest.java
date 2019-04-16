@@ -1,49 +1,32 @@
 package com.github.am4dr.javafx.sample_viewer;
 
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
-import com.google.common.jimfs.WatchServiceConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileUpdatePublisherTest {
 
-    private FileSystem testFs;
     private Path testDir;
     private FileUpdatePublisher fileUpdatePublisher;
 
     @BeforeEach
-    void beforeEach() throws IOException {
-        setupJimfs();
-        Files.createDirectories(testDir);
+    void beforeEach(@TempDir Path tempDir) {
+        testDir = tempDir;
 
         fileUpdatePublisher = new FileUpdatePublisher();
-    }
-
-    private void setupJimfs() {
-        final Configuration jimfsConfig = Configuration.unix().toBuilder()
-                .setWatchServiceConfiguration(WatchServiceConfiguration.polling(50, TimeUnit.MILLISECONDS))
-                .build();
-        testFs = Jimfs.newFileSystem(jimfsConfig);
-        testDir = testFs.getPath("test");
-    }
-
-    private void setupDefaultfs() {
-        testFs = FileSystems.getDefault();
-        testDir = Paths.get("build", "test", "fs-test");
     }
 
     @AfterEach
@@ -67,7 +50,6 @@ class FileUpdatePublisherTest {
         assertTrue(last.isPresent());
     }
 
-    // jimfs and default fs have different behavior.
     @Test
     void watchingNotExistDirectoryTest() throws IOException, InterruptedException {
         final FlowCollector<Path> collector = new FlowCollector<>(Collections.synchronizedList(new ArrayList<>()));
