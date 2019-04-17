@@ -41,10 +41,6 @@ class PathWatcherImplTest {
         watchService.close();
     }
 
-    @Test
-    void testTest() {
-        assertTrue(true);
-    }
 
     @Test
     void detectFileCreationTest() throws IOException, InterruptedException {
@@ -83,6 +79,21 @@ class PathWatcherImplTest {
         assertTrue(containsSameFile(watcher.getWatchedPaths(), subDir));
     }
 
+    @Test
+    void detectDeleteAndRecreateTest() throws IOException, InterruptedException {
+        watcherThread.start();
+        watcher.addRecursively(testDir);
+        Files.delete(testDir);
+
+        Thread.sleep(50);
+        Files.createDirectory(testDir);
+        Thread.sleep(50);
+        final var subDir = testDir.resolve("subDir");
+        Files.createDirectory(subDir);
+
+        Thread.sleep(50);
+        assertTrue(containsSameFile(watcher.getWatchedPaths(), subDir));
+    }
 
     private static boolean containsSameFile(List<Path> paths, Path path) {
         return paths.stream().anyMatch(it -> {

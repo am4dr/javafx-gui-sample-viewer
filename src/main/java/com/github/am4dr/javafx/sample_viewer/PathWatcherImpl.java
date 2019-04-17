@@ -29,9 +29,9 @@ public final class PathWatcherImpl implements PathWatcher {
 
     @Override
     public void addRecursively(Path path) {
-        final var absolutePath = path.toAbsolutePath();
+        final var absolutePath = path.normalize().toAbsolutePath();
         registeredPaths.add(absolutePath);
-        getTargetPaths(absolutePath).forEach(this::register);
+        getAvailableTargetPaths(path).forEach(this::register);
     }
 
     private void register(Path path) {
@@ -42,18 +42,37 @@ public final class PathWatcherImpl implements PathWatcher {
             e.printStackTrace();
         }
     }
-
-    private static List<Path> getTargetPaths(Path path) {
+    private static List<Path> getAvailableTargetPaths(Path path) {
+        final var paths = new ArrayList<Path>();
         if (Files.notExists(path) || !Files.isDirectory(path)) {
-            return getNearestParent(path).stream().collect(toList());
+            getNearestParent(path).ifPresent(it -> {
+                paths.add(it);
+                paths.addAll(getAllParents(it));
+            });
+            return paths;
         }
+        paths.add(path);
+        paths.addAll(getAllChildren(path));
+        paths.addAll(getAllParents(path));
+        return paths;
+    }
+    private static List<Path> getAllChildren(Path path) {
         try {
             return Files.walk(path).filter(it -> Files.isDirectory(it)).collect(toList());
         } catch (IOException e) {
             return List.of();
         }
     }
-
+    private static List<Path> getAllParents(Path path) {
+        final var parent = path.getParent();
+        if (parent == null) { return List.of(); }
+        else {
+            final var paths = new ArrayList<Path>();
+            paths.add(parent);
+            paths.addAll(getAllParents(parent));
+            return paths;
+        }
+    }
     private static Optional<Path> getNearestParent(Path path) {
         return Optional.ofNullable(path.getParent())
                 .flatMap(parent -> Files.exists(parent) ? Optional.of(parent) : getNearestParent(parent));
@@ -75,12 +94,19 @@ public final class PathWatcherImpl implements PathWatcher {
 
             events.forEach(event -> {
                 if (event.kind == ENTRY_CREATE) {
-                    if (registeredPaths.isParent(event.path)) {
-                        register(event.path);
+                    final var path = event.path;
+                    if (registeredPaths.isParent(path)) {
+                        register(path);
                     }
-                    if (Files.isDirectory(event.path) && registeredPaths.isChild(event.path)) {
-                        register(event.path);
+                    else if (registeredPaths.contains(path)) {
+                        getAvailableTargetPaths(path).forEach(this::register);
                     }
+                    else if (Files.isDirectory(path) && registeredPaths.isChild(path)) {
+                        getAllChildren(path).forEach(this::register);
+                    }
+                }
+                if (event.kind == OVERFLOW) {
+                    // TODO implement
                 }
             });
             eventListener.accept(events);
@@ -102,6 +128,9 @@ public final class PathWatcherImpl implements PathWatcher {
             paths.add(path);
         }
 
+        boolean contains(Path path) {
+            return paths.stream().anyMatch(registeredPath -> registeredPath.startsWith(path) && path.startsWith(registeredPath));
+        }
         boolean isParent(Path path) {
             return paths.stream().anyMatch(registeredPath -> registeredPath.getParent().startsWith(path));
         }
@@ -109,5 +138,4 @@ public final class PathWatcherImpl implements PathWatcher {
             return paths.stream().anyMatch(registeredPath -> path.getParent().startsWith(registeredPath));
         }
     }
-
 }
