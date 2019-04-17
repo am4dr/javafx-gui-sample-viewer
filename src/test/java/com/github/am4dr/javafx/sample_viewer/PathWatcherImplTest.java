@@ -18,10 +18,10 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class FileUpdateWatcherTest {
+class PathWatcherImplTest {
 
     private Path testDir;
-    private FileUpdateWatcher watcher;
+    private PathWatcher watcher;
     private WatchService watchService;
     private EventCollector eventCollector;
     private Thread watcherThread;
@@ -30,7 +30,7 @@ class FileUpdateWatcherTest {
     void beforeEach(@TempDir Path tempDir) throws IOException {
         testDir = tempDir;
         watchService = testDir.getFileSystem().newWatchService();
-        watcher = new FileUpdateWatcher(watchService);
+        watcher = new PathWatcherImpl(watchService);
         eventCollector = new EventCollector();
         watcherThread = new Thread(() -> watcher.watchBlocking(eventCollector));
     }
@@ -94,15 +94,15 @@ class FileUpdateWatcherTest {
         });
     }
 
-    static class EventCollector implements Consumer<List<FileUpdateWatcher.TypedPathWatchEvent>> {
-        List<List<FileUpdateWatcher.TypedPathWatchEvent>> eventLists = Collections.synchronizedList(new ArrayList<>());
+    static class EventCollector implements Consumer<List<PathWatcher.PathWatchEvent>> {
+        List<List<PathWatcher.PathWatchEvent>> eventLists = Collections.synchronizedList(new ArrayList<>());
 
         @Override
-        public void accept(List<FileUpdateWatcher.TypedPathWatchEvent> typedPathWatchEvents) {
-            eventLists.add(typedPathWatchEvents);
+        public void accept(List<PathWatcher.PathWatchEvent> pathWatchEvents) {
+            eventLists.add(pathWatchEvents);
         }
 
-        List<FileUpdateWatcher.TypedPathWatchEvent> flatEvents() {
+        List<PathWatcher.PathWatchEvent> flatEvents() {
             return eventLists.stream()
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());

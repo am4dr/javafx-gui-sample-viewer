@@ -8,20 +8,18 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static java.util.stream.Collectors.toList;
 
-/**
- *
- */
-public final class FileUpdateWatcher {
+public final class PathWatcherImpl implements PathWatcher {
 
     private final WatchService watchService;
     private final PathCollection registeredPaths = new PathCollection();
     private final Set<WatchKey> watchedKeys = Collections.synchronizedSet(new HashSet<>());
 
-    public FileUpdateWatcher(WatchService watchService) {
+    public PathWatcherImpl(WatchService watchService) {
         this.watchService = watchService;
     }
 
 
+    @Override
     public List<Path> getWatchedPaths() {
         return watchedKeys.stream()
                 .filter(WatchKey::isValid)
@@ -29,6 +27,7 @@ public final class FileUpdateWatcher {
                 .collect(toList());
     }
 
+    @Override
     public void addRecursively(Path path) {
         final var absolutePath = path.toAbsolutePath();
         registeredPaths.add(absolutePath);
@@ -60,14 +59,15 @@ public final class FileUpdateWatcher {
                 .flatMap(parent -> Files.exists(parent) ? Optional.of(parent) : getNearestParent(parent));
     }
 
-    public void watchBlocking(Consumer<List<TypedPathWatchEvent>> eventListener) {
+    @Override
+    public void watchBlocking(Consumer<List<PathWatcher.PathWatchEvent>> eventListener) {
         while (!Thread.currentThread().isInterrupted()) {
             final WatchKey key;
-            final List<TypedPathWatchEvent> events;
+            final List<PathWatcher.PathWatchEvent> events;
             try {
                 key = watchService.take();
                 events = key.pollEvents().stream()
-                        .map(e -> new TypedPathWatchEvent(e, (Path)key.watchable()))
+                        .map(e -> new PathWatcher.PathWatchEvent(e, (Path)key.watchable()))
                         .collect(toList());
             } catch (InterruptedException e) {
                 break;
@@ -110,13 +110,4 @@ public final class FileUpdateWatcher {
         }
     }
 
-    public static final class TypedPathWatchEvent {
-        public final Path path;
-        public final WatchEvent.Kind<?> kind;
-
-        public TypedPathWatchEvent(WatchEvent<?> event, Path watchable) {
-            path = watchable.resolve((Path)event.context());
-            kind = event.kind();
-        }
-    }
 }

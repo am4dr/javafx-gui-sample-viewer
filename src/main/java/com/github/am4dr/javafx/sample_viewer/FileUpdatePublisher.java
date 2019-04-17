@@ -17,10 +17,11 @@ import java.util.concurrent.SubmissionPublisher;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
+@Deprecated(forRemoval = true, since = "0.4.4")
 public final class FileUpdatePublisher implements Flow.Publisher<Path> {
 
     private final ExecutorService executor = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
-    private SubmissionPublisher<Path> submission = new SubmissionPublisher<>(executor, 10);
+    private final SubmissionPublisher<Path> submission = new SubmissionPublisher<>(executor, 10);
 
     @Override
     public void subscribe(Flow.Subscriber<? super Path> subscriber) {

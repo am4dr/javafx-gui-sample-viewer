@@ -42,6 +42,7 @@ dependencies {
 
     testImplementation("com.google.jimfs:jimfs:1.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.4.1")
+    testImplementation("org.mockito:mockito-core:2.27.0")
 
     "uiSampleImplementation"(sourceSets.main.get().compileClasspath)
     "uiSampleImplementation"(sourceSets.main.get().output)
