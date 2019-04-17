@@ -91,7 +91,6 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
             node = newNode;
             status.set(STATUS.OK);
         }, uncheckedRunnable(() -> {
-            refreshWatchKeys();
             if (newClassLoader instanceof Closeable) {
                 ((Closeable) newClassLoader).close();
             }
@@ -108,7 +107,6 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
             final var loadedByParentLoader = rClass.getClassLoader() != newLoader;
             if (loadedByParentLoader) {
                 uncheckedRunnable(newLoader::close).run();
-                refreshWatchKeys();
                 return null;
             }
             return rClass;
@@ -135,11 +133,6 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     private Optional<URLClassLoader> getCurrentNodeClassLoader() {
         return Optional.ofNullable(node)
                 .map(it -> (URLClassLoader)it.getClass().getClassLoader());
-    }
-    private void refreshWatchKeys() {
-        getCurrentNodeClassLoader()
-                .filter(it -> it instanceof UpdateAwareURLClassLoader)
-                .ifPresent(it -> ((UpdateAwareURLClassLoader) it).updateWatchKeys());
     }
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
