@@ -4,15 +4,14 @@ import com.github.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.WatchService;
+import java.nio.file.*;
 import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedConsumer.uncheckedConsumer;
@@ -23,6 +22,8 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
 
     private final PathWatchEventPublisher publisher;
     private final SubmissionPublisher<Path> createEventPublisher = new SubmissionPublisher<>();
+    private final PathWatcherImpl watcher;
+    private final List<Path> watchPaths;
 
     public UpdateAwareURLClassLoader() {
         this(List.of());
@@ -41,7 +42,8 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
                 }}))
                 .map(uncheckedFunction(path -> path.toUri().toURL()))
                 .forEach(this::addURL);
-        final var watcher = new PathWatcherImpl(watchService);
+        this.watchPaths = watchPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
+        watcher = new PathWatcherImpl(watchService);
         publisher = new PathWatchEventPublisher(watcher);
         publisher.subscribe(new SimpleSubscriber<>() {
             @Override
@@ -53,7 +55,6 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
                 subscription.request(1);
             }
         });
-        watchPaths.stream().map(uncheckedFunction(Path::toRealPath)).forEach(watcher::addRecursively);
     }
     private static WatchService getDefaultWatchService() {
         try {
@@ -78,6 +79,16 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
             final Class<?> aClass = findClassOrNull(name);
             if (aClass == null) {
                 return super.loadClass(name);
+            }
+            try {
+                final Path loadedClassFilePath = Paths.get(aClass.getProtectionDomain().getCodeSource().getLocation().toURI())
+                        .resolve(aClass.getName().replace(".", "/") + ".class")
+                        .toRealPath();
+                if (watchPaths.stream().anyMatch(loadedClassFilePath::startsWith)) {
+                    watcher.addRecursively(loadedClassFilePath);
+                }
+            } catch (URISyntaxException | IOException e) {
+                e.printStackTrace();
             }
             return aClass;
         }
