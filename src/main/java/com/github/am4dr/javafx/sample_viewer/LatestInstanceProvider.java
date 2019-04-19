@@ -1,13 +1,21 @@
 package com.github.am4dr.javafx.sample_viewer;
 
 
+import com.github.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
 import com.github.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
+import com.github.am4dr.javafx.sample_viewer.internal.WaitLastProcessor;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+
+import static java.nio.file.StandardWatchEventKinds.*;
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -18,45 +26,62 @@ public final class LatestInstanceProvider {
     private final String fqcn;
     private final Supplier<ReportingClassLoader> classLoaderSupplier;
     private final PathWatcherImpl pathWatcher;
-    private final PathWatchEventPublisher watchEventPublisher;
     private final ExecutorService workerExecutorService;
-    private final ExecutorService executorService;
+
+    private List<Path> requiredClasses = Collections.synchronizedList(new ArrayList<>());
+
+    private final ScheduledExecutorService waitLastProcessorExecutor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
+    private final WaitLastProcessor<List<PathWatcher.PathWatchEvent>> pathWatchEventWaitLastProcessor =
+            new WaitLastProcessor<>(waitLastProcessorExecutor, 100, TimeUnit.MILLISECONDS);
 
     // TODO PathWatcherとPathWatchEventPublisherはファサードにまとめていいかも
     public LatestInstanceProvider(String fqcn,
                                   Supplier<ReportingClassLoader> classLoaderSupplier,
                                   PathWatcherImpl pathWatcher,
                                   PathWatchEventPublisher watchEventPublisher,
-                                  ExecutorService workerExecutorService,
-                                  ExecutorService publisherExecutorService) {
+                                  ExecutorService workerExecutorService) {
         this.fqcn = fqcn;
         this.classLoaderSupplier = classLoaderSupplier;
         this.pathWatcher = pathWatcher;
-        this.watchEventPublisher = watchEventPublisher;
         this.workerExecutorService = workerExecutorService;
-        this.executorService = publisherExecutorService;
         updateStatus(Status.INITIALIZED);
-    }
-    public LatestInstanceProvider(String fqcn,
-                                  Supplier<ReportingClassLoader> classLoaderSupplier,
-                                  PathWatcherImpl pathWatcher,
-                                  PathWatchEventPublisher watchEventPublisher,
-                                  ExecutorService workerExecutorService) {
-        this(fqcn, classLoaderSupplier, pathWatcher, watchEventPublisher, workerExecutorService, workerExecutorService);
+
+        watchEventPublisher.subscribe(pathWatchEventWaitLastProcessor);
+        pathWatchEventWaitLastProcessor.subscribe(new SimpleSubscriber<>() {
+            @Override
+            public void process(List<PathWatcher.PathWatchEvent> item) {
+                // TODO requiredClassesをみて対象のクラスをリロードすべきかを判断する(対象のクラスに関係あるもののみにフィルターする)
+                if (item.stream().anyMatch(event -> event.kind == ENTRY_MODIFY || event.kind == ENTRY_CREATE || event.kind == OVERFLOW)) {
+                    updateStatus(Status.CHANGE_DETECTED);
+                    // TODO 即座にリロードせず、CHANGE_DETECTEDに遷移するのみでもよいのでは
+                    loadAsync();
+                }
+            }
+            @Override
+            public void onComplete() {
+                shutdown();
+            }
+        });
     }
 
-    public String getFQCN() {
-        return fqcn;
+    public void shutdown() {
+        updateStatus(Status.STOPPED);
+        statusPublisher.close();
+        waitLastProcessorExecutor.shutdown();
     }
 
-
+    private final AtomicReference<Future<?>> loadJob = new AtomicReference<>();
+    private synchronized void loadAsync() {
+        final Future<?> currentJob = loadJob.getAndSet(workerExecutorService.submit(this::load));
+        if (currentJob != null) currentJob.cancel(true);
+    }
     private void load() {
         final var classLoader = classLoaderSupplier.get();
-        // TODO 読み込んだクラスのPathをwatcherに登録するサブスクライバを実装する
-        classLoader.subscribe(new SimpleSubscriber<>() {
+        classLoader.getLoadedPathPublisher().subscribe(new SimpleSubscriber<>() {
             @Override
-            public void onNext(Path item) {
-
+            public void process(Path item) {
+                requiredClasses.add(item);
+                pathWatcher.addRecursively(item);
             }
         });
 
@@ -102,11 +127,19 @@ public final class LatestInstanceProvider {
     }
 
 
+    private AtomicReference<Status> status = new AtomicReference<>();
+    private SubmissionPublisher<Status> statusPublisher = new SubmissionPublisher<>();
     private void updateStatus(Status status) {
+        requireNonNull(status);
+        if (getStatus() == Status.STOPPED) return;
+        statusPublisher.submit(status);
+    }
+    public Status getStatus() {
+        return status.get();
     }
 
 
     public enum Status {
-        INITIALIZED, LOADING, LOAD_SUCCEEDED, CHANGE_DETECTED, LOAD_FAILED
+        INITIALIZED, LOADING, LOAD_SUCCEEDED, CHANGE_DETECTED, LOAD_FAILED, STOPPED
     }
 }

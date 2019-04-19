@@ -9,6 +9,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.stream.Collectors;
@@ -18,10 +19,11 @@ import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedConsumer.u
 import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedFunction.uncheckedFunction;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 
-public final class UpdateAwareURLClassLoader extends URLClassLoader {
+public final class UpdateAwareURLClassLoader extends URLClassLoader implements ReportingClassLoader {
 
     private final PathWatchEventPublisher publisher;
     private final SubmissionPublisher<Path> createEventPublisher = new SubmissionPublisher<>();
+    private final SubmissionPublisher<Path> loadedPathPublisher = new SubmissionPublisher<>();
     private final PathWatcherImpl watcher;
     private final List<Path> watchPaths;
 
@@ -78,6 +80,7 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
             }
             final Class<?> aClass = findClassOrNull(name);
             if (aClass == null) {
+                // call super class implementation to delegate to this parent ClassLoader
                 return super.loadClass(name);
             }
             try {
@@ -85,6 +88,7 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
                         .resolve(aClass.getName().replace(".", "/") + ".class")
                         .toRealPath();
                 if (watchPaths.stream().anyMatch(loadedClassFilePath::startsWith)) {
+                    loadedPathPublisher.submit(loadedClassFilePath);
                     watcher.addRecursively(loadedClassFilePath);
                 }
             } catch (URISyntaxException | IOException e) {
@@ -107,5 +111,29 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader {
 
     @Deprecated(forRemoval = true, since = "4.4")
     public void updateWatchKeys() {
+    }
+
+
+    @Override
+    public Flow.Publisher<Path> getLoadedPathPublisher() {
+        return loadedPathPublisher;
+    }
+
+    @Override
+    public Optional<Class<?>> load(String fqcn) {
+        try {
+            return Optional.ofNullable(loadClass(fqcn));
+        } catch (ClassNotFoundException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
