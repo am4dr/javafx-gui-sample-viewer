@@ -22,9 +22,13 @@ public abstract class SimpleSubscriber<T> implements Flow.Subscriber<T> {
 
     @Override
     public void onError(Throwable throwable) {
+        onFinish();
     }
 
     @Override
     public void onComplete() {
+        onFinish();
     }
+
+    public void onFinish() {}
 }
