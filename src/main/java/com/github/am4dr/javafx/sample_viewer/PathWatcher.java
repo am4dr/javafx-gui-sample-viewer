@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- *
+ * TODO 実質的PathWatchEventPublisherのテスト用のインターフェースになっているので削除する
  */
 public interface PathWatcher {
 
