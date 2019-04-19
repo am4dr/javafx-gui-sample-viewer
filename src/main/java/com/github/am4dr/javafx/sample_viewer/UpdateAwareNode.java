@@ -30,6 +30,8 @@ import static com.github.am4dr.javafx.sample_viewer.LatestInstanceProvider.Statu
  * This class may call {@link Platform#runLater(Runnable)} internally.
  * TODO 0.4.5でインターフェースを維持したまま内部的にLatestInstanceProviderを使用するようにやや強引に書き換えたため、
  *      より適した新しいクラスを実装ののちに Deprecated をつける
+ * TODO ジェネリクスをつかって実際のクラスをRとして取っているのは実行時には消えているとはいえソースが難しいのでやめる
+ *      あくまでもObjectBinding(Node)にしておく
  */
 public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
@@ -41,6 +43,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     private final int waitTimeToDetermineTheLastEvent;
     private static final int defaultWaitTimeMillis = 100;
 
+    // TODO Class<R>ではなくClass<?>をとるようにする
     public UpdateAwareNode(Supplier<URLClassLoader> cls, Class<R> rootClass) {
         this(cls, rootClass.getName());
     }
@@ -107,11 +110,10 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
             return node;
         }
         if (instanceProvider.getStatus() != LOAD_SUCCEEDED) {
-            invalidate();
             return node;
         }
 
-        instanceProvider.getInstance().ifPresentOrElse(instance -> {
+        instanceProvider.getInstance().ifPresent(instance -> {
             if (Node.class.isAssignableFrom(instance.getClass())) {
                 node = (R)instance;
                 initializer.accept(node);
@@ -120,7 +122,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
                 }
                 status.set(STATUS.OK);
             }
-        }, this::invalidate);
+        });
         return node;
     }
 
