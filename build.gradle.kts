@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "com.github.am4dr.javafx"
-version = "0.4.3-SNAPSHOT"
+version = "0.4.4"
 
 repositories {
     jcenter()
@@ -42,6 +42,7 @@ dependencies {
 
     testImplementation("com.google.jimfs:jimfs:1.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.4.1")
+    testImplementation("org.mockito:mockito-core:2.27.0")
 
     "uiSampleImplementation"(sourceSets.main.get().compileClasspath)
     "uiSampleImplementation"(sourceSets.main.get().output)
@@ -59,6 +60,7 @@ tasks {
             // Expose StandardJavadocDocletOptions in Javadocs for better compatibility with Kotlin DSL · Issue #7038 · gradle/gradle
             // https://github.com/gradle/gradle/issues/7038
             options { this as StandardJavadocDocletOptions
+                encoding = "utf-8"
                 links("https://docs.oracle.com/en/java/javase/11/docs/api")
                 locale = "en_US"
                 addStringOption("-module-path", modulePaths)
@@ -66,6 +68,7 @@ tasks {
         }
     }
     compileJava {
+        options.encoding = "utf-8"
         options.compilerArgs.addAll(listOf("--module-path", classpath.asPath))
         classpath = files()
     }

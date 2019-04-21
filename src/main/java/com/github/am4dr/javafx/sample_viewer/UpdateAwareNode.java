@@ -2,34 +2,35 @@ package com.github.am4dr.javafx.sample_viewer;
 
 import com.github.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
 import com.github.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
-import com.github.am4dr.javafx.sample_viewer.internal.WaitLastProcessor;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Node;
 
-import java.io.Closeable;
-import java.lang.reflect.InvocationTargetException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedConsumer.uncheckedConsumer;
-import static com.github.am4dr.javafx.sample_viewer.internal.UncheckedRunnable.uncheckedRunnable;
+import static com.github.am4dr.javafx.sample_viewer.LatestInstanceProvider.Status.LOAD_SUCCEEDED;
 
 /**
  *
  *
  * This class may call {@link Platform#runLater(Runnable)} internally.
+ * TODO 0.4.5でインターフェースを維持したまま内部的にLatestInstanceProviderを使用するようにやや強引に書き換えたため、
+ *      より適した新しいクラスを実装ののちに Deprecated をつける
+ * TODO ジェネリクスをつかって実際のクラスをRとして取っているのは実行時には消えているとはいえソースが難しいのでやめる
+ *      あくまでもObjectBinding(Node)にしておく
  */
 public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
@@ -41,6 +42,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     private final int waitTimeToDetermineTheLastEvent;
     private static final int defaultWaitTimeMillis = 100;
 
+    // TODO Class<R>ではなくClass<?>をとるようにする
     public UpdateAwareNode(Supplier<URLClassLoader> cls, Class<R> rootClass) {
         this(cls, rootClass.getName());
     }
@@ -54,6 +56,31 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         this.initializer = checkedBuilder.initializer;
         this.waitTimeToDetermineTheLastEvent = checkedBuilder.waitTimeMillis;
         this.contextMap = checkedBuilder.contextMap;
+
+
+        instanceProvider = new LatestInstanceProvider(
+                name,
+                new ClassLoaderSupplierWrapper(cls),
+                Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE),
+                waitTimeToDetermineTheLastEvent);
+        instanceProvider.getStatusPublisher().subscribe(new SimpleSubscriber<>() {
+            @Override
+            public void process(LatestInstanceProvider.Status item) {
+                Platform.runLater(() -> {
+                    switch (item) {
+                        case CHANGE_DETECTED:
+                            status.set(STATUS.UPDATE_DETECTED);
+                            break;
+                        case LOAD_FAILED:
+                            status.set(STATUS.ERROR);
+                            break;
+                        case LOAD_SUCCEEDED:
+                            invalidate();
+                            break;
+                    }
+                });
+            }
+        });
     }
     public static <R extends Node> UpdateAwareNode<R> build(UnaryOperator<Builder<R>> configuration) {
         return configuration.apply(new Builder<>()).build();
@@ -67,7 +94,6 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
     @Override
     protected void onInvalidating() {
         status.set(STATUS.RELOADING);
-        super.onInvalidating();
     }
 
     @Override
@@ -75,93 +101,75 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         if (node != null && status.get() == STATUS.OK) {
             return node;
         }
-
-        final Class<R> rClass = loadClassByNewLoaderOrNull();
-        if (rClass == null) {
-            status.set(STATUS.ERROR);
+        if (instanceProvider.getStatus() != LOAD_SUCCEEDED) {
             return node;
         }
 
-        final var newClassLoader = rClass.getClassLoader();
-        createNode(rClass).ifPresentOrElse(newNode -> {
-            if ((newClassLoader instanceof UpdateAwareURLClassLoader)) {
-                watchReloadEvent((UpdateAwareURLClassLoader) newClassLoader);
+        instanceProvider.getInstance().ifPresent(instance -> {
+            if (Node.class.isAssignableFrom(instance.getClass())) {
+                node = (R)instance;
+                initializer.accept(node);
+                if (node instanceof RestorableNode) {
+                    ((RestorableNode)node).restore(contextMap);
+                }
+                status.set(STATUS.OK);
             }
-            getCurrentNodeClassLoader().ifPresent(uncheckedConsumer(URLClassLoader::close));
-            node = newNode;
-            status.set(STATUS.OK);
-        }, uncheckedRunnable(() -> {
-            refreshWatchKeys();
-            if (newClassLoader instanceof Closeable) {
-                ((Closeable) newClassLoader).close();
-            }
-            status.set(STATUS.ERROR);
-        }));
+        });
         return node;
     }
 
-    private Class<R> loadClassByNewLoaderOrNull() {
-        final URLClassLoader newLoader = cls.get();
-        try {
-            final Class<R> rClass = (Class<R>)newLoader.loadClass(name);
-            // node must be loaded by the specified ClassLoader
-            final var loadedByParentLoader = rClass.getClassLoader() != newLoader;
-            if (loadedByParentLoader) {
-                uncheckedRunnable(newLoader::close).run();
-                refreshWatchKeys();
-                return null;
-            }
-            return rClass;
-        } catch (ClassNotFoundException e) {
-            // nothing to do
+
+
+    private final LatestInstanceProvider instanceProvider;
+    private class ClassLoaderSupplierWrapper implements Supplier<ReportingClassLoader> {
+
+        private final Supplier<URLClassLoader> cls;
+
+        public ClassLoaderSupplierWrapper(Supplier<URLClassLoader> cls) {
+            this.cls = cls;
         }
-        return null;
-    }
 
-    private Optional<R> createNode(Class<R> clazz) {
-        R node = null;
-        try {
-            node = clazz.getDeclaredConstructor().newInstance();
-            initializer.accept(node);
-            if (node instanceof RestorableNode) {
-                ((RestorableNode)node).restore(contextMap);
+        @Override
+        public ReportingClassLoader get() {
+            final var urlClassLoader = cls.get();
+            if (ReportingClassLoader.class.isAssignableFrom(urlClassLoader.getClass())) {
+                return (ReportingClassLoader) urlClassLoader;
             }
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            // nothing to do
+            else {
+                return new ReportingClassLoader() {
+
+                    private final SubmissionPublisher<Path> pathSubmissionPublisher = new SubmissionPublisher<>();
+
+                    @Override
+                    public Flow.Publisher<Path> getLoadedPathPublisher() {
+                        return pathSubmissionPublisher;
+                    }
+
+                    @Override
+                    public Optional<Class<?>> load(String fqcn) {
+                        try {
+                            return Optional.ofNullable(urlClassLoader.loadClass(fqcn));
+                        } catch (ClassNotFoundException e) {
+                            return Optional.empty();
+                        }
+                    }
+
+                    @Override
+                    public void shutdown() {
+                        pathSubmissionPublisher.close();
+                        try {
+                            urlClassLoader.close();
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    }
+                };
+            }
         }
-        return Optional.ofNullable(node);
     }
 
-    private Optional<URLClassLoader> getCurrentNodeClassLoader() {
-        return Optional.ofNullable(node)
-                .map(it -> (URLClassLoader)it.getClass().getClassLoader());
-    }
-    private void refreshWatchKeys() {
-        getCurrentNodeClassLoader()
-                .filter(it -> it instanceof UpdateAwareURLClassLoader)
-                .ifPresent(it -> ((UpdateAwareURLClassLoader) it).updateWatchKeys());
-    }
 
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
-    private void watchReloadEvent(UpdateAwareURLClassLoader loader) {
-        final WaitLastProcessor<Path> lastProcessor = new WaitLastProcessor<>(executor, waitTimeToDetermineTheLastEvent, TimeUnit.MILLISECONDS);
-        lastProcessor.subscribe(new SimpleSubscriber<>() {
-            @Override
-            public void onNext(Path item) {
-                Platform.runLater(UpdateAwareNode.this::invalidate);
-                subscription.request(1);
-            }
-        });
-        final Flow.Publisher<Path> changePublisher = loader.getChangePublisher();
-        changePublisher.subscribe(lastProcessor);
-        changePublisher.subscribe(new SimpleSubscriber<>() {
-            @Override
-            public void onNext(Path item) {
-                Platform.runLater(() -> UpdateAwareNode.this.status.set(STATUS.UPDATE_DETECTED));
-                subscription.request(1);
-            }
-        });
-    }
+
 
 
     public enum STATUS {
