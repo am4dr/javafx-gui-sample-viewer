@@ -147,7 +147,9 @@ public final class LatestInstanceProvider {
     public Status getStatus() {
         return status.get();
     }
-    public Flow.Publisher<Status> getStatusPublisher = statusPublisher;
+    public Flow.Publisher<Status> getStatusPublisher() {
+        return statusPublisher;
+    }
 
 
     public enum Status {

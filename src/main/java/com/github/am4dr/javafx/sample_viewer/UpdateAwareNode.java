@@ -63,7 +63,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
                 new ClassLoaderSupplierWrapper(cls),
                 Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE),
                 waitTimeToDetermineTheLastEvent);
-        instanceProvider.getStatusPublisher.subscribe(new SimpleSubscriber<>() {
+        instanceProvider.getStatusPublisher().subscribe(new SimpleSubscriber<>() {
             @Override
             public void process(LatestInstanceProvider.Status item) {
                 Platform.runLater(() -> {
