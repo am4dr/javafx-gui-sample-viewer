@@ -67,6 +67,7 @@ tasks {
         }
     }
     compileJava {
+        options.encoding = "utf-8"
         options.compilerArgs.addAll(listOf("--module-path", classpath.asPath))
         classpath = files()
     }
