@@ -1,6 +1,6 @@
 package sample.target;
 
-import com.github.am4dr.javafx.sample_viewer.UpdateAwareNode;
+import com.github.am4dr.javafx.sample_viewer.NodeLatestInstanceBinding;
 import com.github.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
 import com.github.am4dr.javafx.sample_viewer.ui.SampleCollection;
 import com.github.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
@@ -20,8 +20,8 @@ public final class SampleApplication extends SampleApplicationSupport {
 
     private SampleCollection createSamples() {
         final SampleCollection samples = new SampleCollection();
-        samples.addSample("colorful buttons!", new UpdateAwareNode<>(this::createWatcher, ColorfulButtonSample.class.getName()));
-        samples.addSample("colorful buttons!", new UpdateAwareNode<>(this::createWatcher, ColorfulButtonSample.class));
+        samples.addSample("colorful buttons!", new NodeLatestInstanceBinding(this::createWatcher, ColorfulButtonSample.class.getName()));
+        samples.addSample("colorful buttons!", new NodeLatestInstanceBinding(this::createWatcher, ColorfulButtonSample.class));
         return samples;
     }
 }

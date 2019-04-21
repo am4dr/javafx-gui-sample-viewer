@@ -27,11 +27,9 @@ import static com.github.am4dr.javafx.sample_viewer.LatestInstanceProvider.Statu
  *
  *
  * This class may call {@link Platform#runLater(Runnable)} internally.
- * TODO 0.4.5でインターフェースを維持したまま内部的にLatestInstanceProviderを使用するようにやや強引に書き換えたため、
- *      より適した新しいクラスを実装ののちに Deprecated をつける
- * TODO ジェネリクスをつかって実際のクラスをRとして取っているのは実行時には消えているとはいえソースが難しいのでやめる
- *      あくまでもObjectBinding(Node)にしておく
+ * @deprecated replaced by {@link NodeLatestInstanceBinding}
  */
+@Deprecated(forRemoval = true, since = "0.5")
 public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
 
     private final String name;
