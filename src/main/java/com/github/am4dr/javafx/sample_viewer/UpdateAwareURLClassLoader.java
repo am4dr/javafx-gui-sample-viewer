@@ -7,7 +7,9 @@ import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Flow;
@@ -52,13 +54,6 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader implements R
                 subscription.request(1);
             }
         });
-    }
-    private static WatchService getDefaultWatchService() {
-        try {
-            return FileSystems.getDefault().newWatchService();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     @Override
