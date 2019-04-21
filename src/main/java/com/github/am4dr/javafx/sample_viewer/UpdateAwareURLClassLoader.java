@@ -95,13 +95,6 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader implements R
         }
     }
 
-    public Flow.Publisher<Path> getChangePublisher() {
-        return createEventPublisher;
-    }
-
-    @Deprecated(forRemoval = true, since = "4.4")
-    public void updateWatchKeys() {
-    }
 
 
     @Override

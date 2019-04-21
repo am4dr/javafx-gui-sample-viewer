@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "com.github.am4dr.javafx"
-version = "0.4.4"
+version = "0.5.0-SNAPSHOT"
 
 repositories {
     jcenter()
