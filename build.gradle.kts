@@ -60,6 +60,7 @@ tasks {
             // Expose StandardJavadocDocletOptions in Javadocs for better compatibility with Kotlin DSL · Issue #7038 · gradle/gradle
             // https://github.com/gradle/gradle/issues/7038
             options { this as StandardJavadocDocletOptions
+                encoding = "utf-8"
                 links("https://docs.oracle.com/en/java/javase/11/docs/api")
                 locale = "en_US"
                 addStringOption("-module-path", modulePaths)
