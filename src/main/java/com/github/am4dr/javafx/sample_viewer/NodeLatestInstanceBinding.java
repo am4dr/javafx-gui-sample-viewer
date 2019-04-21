@@ -1,6 +1,5 @@
 package com.github.am4dr.javafx.sample_viewer;
 
-import com.github.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
 import com.github.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
@@ -9,7 +8,6 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Node;
 
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -45,11 +43,7 @@ public final class NodeLatestInstanceBinding extends ObjectBinding<Node> {
         final var cls = checkedBuilder.classLoaderSupplier;
         final var waitTimeToDetermineTheLastEvent = checkedBuilder.waitTimeMillis;
 
-        instanceProvider = new LatestInstanceProvider(
-                name,
-                cls,
-                Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE),
-                waitTimeToDetermineTheLastEvent);
+        instanceProvider = new LatestInstanceProvider(name, cls, waitTimeToDetermineTheLastEvent);
         instanceProvider.getStatusPublisher().subscribe(new SimpleSubscriber<>() {
             @Override
             public void process(LatestInstanceProvider.Status item) {

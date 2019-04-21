@@ -1,6 +1,5 @@
 package com.github.am4dr.javafx.sample_viewer;
 
-import com.github.am4dr.javafx.sample_viewer.internal.DaemonThreadFactory;
 import com.github.am4dr.javafx.sample_viewer.internal.SimpleSubscriber;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
@@ -14,7 +13,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Consumer;
@@ -55,12 +53,7 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         this.waitTimeToDetermineTheLastEvent = checkedBuilder.waitTimeMillis;
         this.contextMap = checkedBuilder.contextMap;
 
-
-        instanceProvider = new LatestInstanceProvider(
-                name,
-                new ClassLoaderSupplierWrapper(cls),
-                Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE),
-                waitTimeToDetermineTheLastEvent);
+        instanceProvider = new LatestInstanceProvider(name, new ClassLoaderSupplierWrapper(cls), waitTimeToDetermineTheLastEvent);
         instanceProvider.getStatusPublisher().subscribe(new SimpleSubscriber<>() {
             @Override
             public void process(LatestInstanceProvider.Status item) {

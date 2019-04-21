@@ -23,6 +23,8 @@ import static java.util.Objects.requireNonNull;
  */
 public final class LatestInstanceProvider {
 
+    private static final ExecutorService DEFAULT_EXECUTOR_SERVICE = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
+
     private final String fqcn;
     private final Supplier<ReportingClassLoader> classLoaderSupplier;
     private final ExecutorService workerExecutorService;
@@ -33,13 +35,10 @@ public final class LatestInstanceProvider {
     private final SubmissionPublisher<PathWatchEvent> filteredEventPublisher = new SubmissionPublisher<>();
     private final ScheduledExecutorService waitLastProcessorExecutor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
 
-    public LatestInstanceProvider(String fqcn,
-                                  Supplier<ReportingClassLoader> classLoaderSupplier,
-                                  ExecutorService workerExecutorService,
-                                  int delayTime) {
+    public LatestInstanceProvider(String fqcn, Supplier<ReportingClassLoader> classLoaderSupplier, int delayTime) {
         this.fqcn = fqcn;
         this.classLoaderSupplier = classLoaderSupplier;
-        this.workerExecutorService = workerExecutorService;
+        this.workerExecutorService = DEFAULT_EXECUTOR_SERVICE;
         updateStatus(Status.INITIALIZED);
 
         watchEventPublisher = new PathWatchEventPublisher();
@@ -111,7 +110,6 @@ public final class LatestInstanceProvider {
     }
 
 
-    // TODO 最新のインスタンスとそのローダーを保持するものとしてinternalに抽出(LatestInstanceHolder?)
     private final AtomicReference<LoadedInstance> atomicInstance = new AtomicReference<>();
     public Optional<Object> getInstance() {
         return Optional.ofNullable(atomicInstance.get()).map(it -> it.instance);
