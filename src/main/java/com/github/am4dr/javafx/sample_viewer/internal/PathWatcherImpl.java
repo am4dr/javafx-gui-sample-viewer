@@ -1,4 +1,6 @@
-package com.github.am4dr.javafx.sample_viewer;
+package com.github.am4dr.javafx.sample_viewer.internal;
+
+import com.github.am4dr.javafx.sample_viewer.PathWatchEvent;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -79,14 +81,14 @@ public final class PathWatcherImpl implements PathWatcher {
     }
 
     @Override
-    public void watchBlocking(Consumer<List<PathWatcher.PathWatchEvent>> eventListener) {
+    public void watchBlocking(Consumer<List<PathWatchEvent>> eventListener) {
         while (!Thread.currentThread().isInterrupted()) {
             final WatchKey key;
-            final List<PathWatcher.PathWatchEvent> events;
+            final List<PathWatchEvent> events;
             try {
                 key = watchService.take();
                 events = key.pollEvents().stream()
-                        .map(e -> new PathWatcher.PathWatchEvent(e, (Path)key.watchable()))
+                        .map(e -> new PathWatchEvent(e, (Path)key.watchable()))
                         .collect(toList());
             } catch (InterruptedException e) {
                 break;

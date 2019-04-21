@@ -20,52 +20,45 @@ import static java.util.Objects.requireNonNull;
 
 /**
  *
- * TODO PathWatchEventPublisherから通知を受けてリロードを試みるサブスクライバの実装
  */
 public final class LatestInstanceProvider {
 
     private final String fqcn;
     private final Supplier<ReportingClassLoader> classLoaderSupplier;
-    private final PathWatcherImpl pathWatcher;
     private final ExecutorService workerExecutorService;
 
     private List<Path> requiredClasses = Collections.synchronizedList(new ArrayList<>());
 
     private final PathWatchEventPublisher watchEventPublisher;
-    private final SubmissionPublisher<PathWatcher.PathWatchEvent> filteredEventPublisher = new SubmissionPublisher<>();
+    private final SubmissionPublisher<PathWatchEvent> filteredEventPublisher = new SubmissionPublisher<>();
     private final ScheduledExecutorService waitLastProcessorExecutor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
 
-    // TODO PathWatcherとPathWatchEventPublisherはファサードにまとめていいかも
     public LatestInstanceProvider(String fqcn,
                                   Supplier<ReportingClassLoader> classLoaderSupplier,
-                                  PathWatcherImpl pathWatcher,
                                   ExecutorService workerExecutorService,
                                   int delayTime) {
         this.fqcn = fqcn;
         this.classLoaderSupplier = classLoaderSupplier;
-        this.pathWatcher = pathWatcher;
         this.workerExecutorService = workerExecutorService;
         updateStatus(Status.INITIALIZED);
 
-        watchEventPublisher = new PathWatchEventPublisher(pathWatcher);
+        watchEventPublisher = new PathWatchEventPublisher();
         watchEventPublisher.subscribe(new SimpleSubscriber<>() {
             @Override
-            public void process(List<PathWatcher.PathWatchEvent> item) {
+            public void process(List<PathWatchEvent> item) {
                 item.stream()
                         // TODO requiredClassesをみて対象のクラスをリロードすべきかを判断する(対象のクラスに関係あるもののみにフィルターする)
                         .filter(event -> event.kind == ENTRY_CREATE || event.kind == OVERFLOW)
                         .forEach(filteredEventPublisher::submit);
             }
         });
-        final WaitLastProcessor<PathWatcher.PathWatchEvent> waitLastPathEventProcessor =
+        final WaitLastProcessor<PathWatchEvent> waitLastPathEventProcessor =
                 new WaitLastProcessor<>(waitLastProcessorExecutor, delayTime, TimeUnit.MILLISECONDS);
         filteredEventPublisher.subscribe(waitLastPathEventProcessor);
         waitLastPathEventProcessor.subscribe(new SimpleSubscriber<>() {
             @Override
-            public void process(PathWatcher.PathWatchEvent item) {
+            public void process(PathWatchEvent item) {
                 updateStatus(Status.CHANGE_DETECTED);
-                // TODO 即座にリロードせず、CHANGE_DETECTEDに遷移するのみでもよいのでは
-                //      その場合には特に複数のサブスクライバがいるときに誰がロードを要求するのかという問題は出るが
                 loadAsync();
             }
             @Override
@@ -96,7 +89,7 @@ public final class LatestInstanceProvider {
             @Override
             public void process(Path item) {
                 requiredClasses.add(item);
-                pathWatcher.addRecursively(item);
+                watchEventPublisher.addRecursively(item);
             }
         });
 

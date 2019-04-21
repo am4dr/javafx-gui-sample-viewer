@@ -11,7 +11,6 @@ import javafx.scene.Node;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URLClassLoader;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -59,16 +58,9 @@ public final class UpdateAwareNode<R extends Node> extends ObjectBinding<R> {
         this.contextMap = checkedBuilder.contextMap;
 
 
-        final PathWatcherImpl pathWatcher;
-        try {
-            pathWatcher = new PathWatcherImpl(FileSystems.getDefault().newWatchService());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
         instanceProvider = new LatestInstanceProvider(
                 name,
                 new ClassLoaderSupplierWrapper(cls),
-                pathWatcher,
                 Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE),
                 waitTimeToDetermineTheLastEvent);
         instanceProvider.getStatusPublisher.subscribe(new SimpleSubscriber<>() {

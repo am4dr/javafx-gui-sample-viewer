@@ -24,7 +24,6 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader implements R
     private final PathWatchEventPublisher publisher;
     private final SubmissionPublisher<Path> createEventPublisher = new SubmissionPublisher<>();
     private final SubmissionPublisher<Path> loadedPathPublisher = new SubmissionPublisher<>();
-    private final PathWatcherImpl watcher;
     private final List<Path> watchPaths;
 
     public UpdateAwareURLClassLoader() {
@@ -34,9 +33,6 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader implements R
         this(paths, List.of());
     }
     public UpdateAwareURLClassLoader(List<Path> watchPaths, List<Path> loadOnlyPaths) {
-        this(watchPaths, loadOnlyPaths, getDefaultWatchService());
-    }
-    public UpdateAwareURLClassLoader(List<Path> watchPaths, List<Path> loadOnlyPaths, WatchService watchService) {
         super(new URL[0]);
         Stream.concat(watchPaths.stream(), loadOnlyPaths.stream())
                 .peek(uncheckedConsumer(it -> { if (Files.notExists(it)) {
@@ -45,11 +41,10 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader implements R
                 .map(uncheckedFunction(path -> path.toUri().toURL()))
                 .forEach(this::addURL);
         this.watchPaths = watchPaths.stream().map(uncheckedFunction(Path::toRealPath)).collect(Collectors.toList());
-        watcher = new PathWatcherImpl(watchService);
-        publisher = new PathWatchEventPublisher(watcher);
+        publisher = new PathWatchEventPublisher();
         publisher.subscribe(new SimpleSubscriber<>() {
             @Override
-            public void onNext(List<PathWatcher.PathWatchEvent> item) {
+            public void onNext(List<PathWatchEvent> item) {
                 item.stream()
                         .filter(it -> it.kind == ENTRY_CREATE)
                         .map(it -> it.path)
@@ -89,7 +84,7 @@ public final class UpdateAwareURLClassLoader extends URLClassLoader implements R
                         .toRealPath();
                 if (watchPaths.stream().anyMatch(loadedClassFilePath::startsWith)) {
                     loadedPathPublisher.submit(loadedClassFilePath);
-                    watcher.addRecursively(loadedClassFilePath);
+                    publisher.addRecursively(loadedClassFilePath);
                 }
             } catch (URISyntaxException | IOException e) {
                 e.printStackTrace();

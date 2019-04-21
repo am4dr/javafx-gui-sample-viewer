@@ -1,5 +1,7 @@
 package com.github.am4dr.javafx.sample_viewer;
 
+import com.github.am4dr.javafx.sample_viewer.internal.PathWatcher;
+import com.github.am4dr.javafx.sample_viewer.internal.PathWatcherImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -105,15 +107,15 @@ class PathWatcherImplTest {
         });
     }
 
-    static class EventCollector implements Consumer<List<PathWatcher.PathWatchEvent>> {
-        List<List<PathWatcher.PathWatchEvent>> eventLists = Collections.synchronizedList(new ArrayList<>());
+    static class EventCollector implements Consumer<List<PathWatchEvent>> {
+        List<List<PathWatchEvent>> eventLists = Collections.synchronizedList(new ArrayList<>());
 
         @Override
-        public void accept(List<PathWatcher.PathWatchEvent> pathWatchEvents) {
+        public void accept(List<PathWatchEvent> pathWatchEvents) {
             eventLists.add(pathWatchEvents);
         }
 
-        List<PathWatcher.PathWatchEvent> flatEvents() {
+        List<PathWatchEvent> flatEvents() {
             return eventLists.stream()
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
