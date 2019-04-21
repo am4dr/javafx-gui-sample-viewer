@@ -1,6 +1,6 @@
-import org.apache.tools.ant.types.resources.comparators.Date
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.jvm.tasks.Jar
+import java.util.*
 
 plugins {
     `java-library`
@@ -128,7 +128,7 @@ bintray {
         with(version) {
             name = project.version.toString()
             vcsTag = project.version.toString()
-            released  = Date().toString()
+            released = Date().toString()
         }
     }
     setPublications("jar", "javadoc", "source")
