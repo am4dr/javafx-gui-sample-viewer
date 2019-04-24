@@ -1,7 +1,6 @@
 package com.github.am4dr.javafx.sample_viewer;
 
 import com.github.am4dr.javafx.sample_viewer.internal.PathWatcher;
-import com.github.am4dr.javafx.sample_viewer.internal.PathWatcherImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class PathWatcherImplTest {
+class PathWatcherTest {
 
     private Path testDir;
     private PathWatcher watcher;
@@ -32,7 +31,7 @@ class PathWatcherImplTest {
     void beforeEach(@TempDir Path tempDir) throws IOException {
         testDir = tempDir;
         watchService = testDir.getFileSystem().newWatchService();
-        watcher = new PathWatcherImpl(watchService);
+        watcher = new PathWatcher(watchService);
         eventCollector = new EventCollector();
         watcherThread = new Thread(() -> watcher.watchBlocking(eventCollector));
     }

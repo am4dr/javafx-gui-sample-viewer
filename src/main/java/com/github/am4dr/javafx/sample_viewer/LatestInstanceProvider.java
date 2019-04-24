@@ -23,11 +23,9 @@ import static java.util.Objects.requireNonNull;
  */
 public final class LatestInstanceProvider {
 
-    private static final ExecutorService DEFAULT_EXECUTOR_SERVICE = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
-
     private final String fqcn;
     private final Supplier<ReportingClassLoader> classLoaderSupplier;
-    private final ExecutorService workerExecutorService;
+    private final ExecutorService workerExecutorService = DaemonThreadFactory.getCachedThreadPool();
 
     private List<Path> requiredClasses = Collections.synchronizedList(new ArrayList<>());
 
@@ -38,7 +36,6 @@ public final class LatestInstanceProvider {
     public LatestInstanceProvider(String fqcn, Supplier<ReportingClassLoader> classLoaderSupplier, int delayTime) {
         this.fqcn = fqcn;
         this.classLoaderSupplier = classLoaderSupplier;
-        this.workerExecutorService = DEFAULT_EXECUTOR_SERVICE;
         updateStatus(Status.INITIALIZED);
 
         watchEventPublisher = new PathWatchEventPublisher();
