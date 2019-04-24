@@ -21,10 +21,10 @@ public final class StatusBorderedPane extends StackPane {
 
     private final Timeline borderFadeOut = new Timeline();
     private final double borderMaxOpacity = 0.75;
-    private final DoubleProperty borderOpacity = new SimpleDoubleProperty(borderMaxOpacity);
-    private final ObjectProperty<Color> borderColor = new SimpleObjectProperty<>();
-    private BorderLayer borderLayer = new BorderLayer();
-    private BorderPane basePane = new BorderPane();
+    private final DoubleProperty borderOpacity = new SimpleDoubleProperty();
+    private final ObjectProperty<Status> status = new SimpleObjectProperty<>();
+    private final BorderLayer borderLayer = new BorderLayer();
+    private final BorderPane basePane = new BorderPane();
 
     {
         borderFadeOut.getKeyFrames().addAll(
@@ -32,84 +32,71 @@ public final class StatusBorderedPane extends StackPane {
                 new KeyFrame(new Duration(750), new KeyValue(borderOpacity, borderMaxOpacity)),
                 new KeyFrame(new Duration(1000), new KeyValue(borderOpacity, 0.0)));
 
+        status.addListener((observableValue, oldValue, newValue) -> {
+            if (newValue == Status.OK) {
+                borderFadeOut.playFromStart();
+            }
+            else {
+                borderOpacity.set(borderMaxOpacity);
+            }
+        });
+        status.set(Status.PROCESSING);
+
         borderLayer.setPickOnBounds(false);
-        borderLayer.color.bind(borderColor);
+        borderLayer.color.bind(createObjectBinding(() -> status.get().getDefaultColor(), status));
+        borderLayer.opacityProperty().bind(borderOpacity);
         getChildren().addAll(basePane, borderLayer);
     }
 
     @Deprecated(forRemoval = true, since = "0.5")
     public StatusBorderedPane(UpdateAwareNode<?> updateAwareNode) {
         basePane.centerProperty().bind(updateAwareNode);
-
         final var statusProperty = updateAwareNode.statusProperty();
-        resetBorderColor(statusProperty.get());
-        borderColor.bind(createObjectBinding(() -> withOpacity(statusToColor(statusProperty.get()), borderOpacity.get()), borderOpacity));
-        statusProperty.addListener((_o, old, status) -> {
-            resetBorderColor(status);
-            borderColor.bind(createObjectBinding(() -> withOpacity(statusToColor(status), borderOpacity.get()), borderOpacity));
-        });
+        status.bind(createObjectBinding(() -> {
+            switch(statusProperty.get()) {
+                case OK:
+                    return Status.OK;
+                case RELOADING:
+                    return Status.PROCESSING;
+                case UPDATE_DETECTED:
+                    return Status.WARNING;
+                case ERROR:
+                default:
+                    return Status.ERROR;
+            }
+        }, statusProperty));
     }
 
     public StatusBorderedPane(NodeLatestInstanceBinding nodeBinding) {
         basePane.centerProperty().bind(nodeBinding);
         final var statusProperty = nodeBinding.statusProperty();
-        resetBorderColor(statusProperty.get());
-        borderColor.bind(createObjectBinding(() -> withOpacity(statusToColor(statusProperty.get()), borderOpacity.get()), borderOpacity));
-        statusProperty.addListener((_o, old, status) -> {
-            resetBorderColor(status);
-            borderColor.bind(createObjectBinding(() -> withOpacity(statusToColor(status), borderOpacity.get()), borderOpacity));
-        });
+        status.bind(createObjectBinding(() -> {
+            switch(statusProperty.get()) {
+                case OK:
+                    return Status.OK;
+                case RELOADING:
+                    return Status.PROCESSING;
+                case UPDATE_DETECTED:
+                    return Status.WARNING;
+                case ERROR:
+                default:
+                    return Status.ERROR;
+            }
+        }, statusProperty));
     }
 
-    private void resetBorderColor(NodeLatestInstanceBinding.STATUS status) {
-        if (status == NodeLatestInstanceBinding.STATUS.OK) {
-            borderFadeOut.playFromStart();
-        }
-        else {
-            borderOpacity.set(borderMaxOpacity);
-        }
-    }
-    private Color statusToColor(NodeLatestInstanceBinding.STATUS status) {
-        switch (status) {
-            case OK:
-                return Color.LIMEGREEN;
-            case ERROR:
-                return Color.DARKRED;
-            case UPDATE_DETECTED:
-                return Color.DARKORANGE;
-            case RELOADING:
-                return Color.ORANGE;
-            default:
-                return Color.ANTIQUEWHITE;
-        }
-    }
 
-    @Deprecated(forRemoval = true, since = "0.5")
-    private void resetBorderColor(UpdateAwareNode.STATUS status) {
-        if (status == UpdateAwareNode.STATUS.OK) {
-            borderFadeOut.playFromStart();
+    public enum Status {
+        OK(Color.LIMEGREEN), ERROR(Color.DARKRED), WARNING(Color.DARKORANGE), PROCESSING(Color.ORANGE);
+        private final Color defaultColor;
+
+        Status(Color color) {
+            defaultColor = color;
         }
-        else {
-            borderOpacity.set(borderMaxOpacity);
+
+        public Color getDefaultColor() {
+            return defaultColor;
         }
-    }
-    @Deprecated(forRemoval = true, since = "0.5")
-    private static Color statusToColor(UpdateAwareNode.STATUS status) {
-        switch (status) {
-            case OK:
-                return Color.LIMEGREEN;
-            case ERROR:
-                return Color.DARKRED;
-            case UPDATE_DETECTED:
-                return Color.DARKORANGE;
-            case RELOADING:
-                return Color.ORANGE;
-            default:
-                return Color.ANTIQUEWHITE;
-        }
-    }
-    private static Color withOpacity(Color color, double opacity) {
-        return Color.color(color.getRed(), color.getGreen(), color.getBlue(), opacity);
     }
 
 
