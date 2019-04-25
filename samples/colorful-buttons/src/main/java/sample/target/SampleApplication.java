@@ -20,8 +20,10 @@ public final class SampleApplication extends SampleApplicationSupport {
 
     private SampleCollection createSamples() {
         final SampleCollection samples = new SampleCollection();
-        samples.addSample("colorful buttons!", new NodeLatestInstanceBinding(this::createWatcher, ColorfulButtonSample.class.getName()));
-        samples.addSample("colorful buttons!", new NodeLatestInstanceBinding(this::createWatcher, ColorfulButtonSample.class));
+        samples.addSample("colorful buttons!", new NodeLatestInstanceBinding(this::createClassLoader, ColorfulButtonSample.class.getName()));
+        samples.addSample("colorful buttons!", new NodeLatestInstanceBinding(this::createClassLoader, ColorfulButtonSample.class));
+        samples.addSample("colorful buttons!", createNodeBinding(ColorfulButtonSample.class.getName()));
+        samples.addSample("colorful buttons!", createNodeBinding(ColorfulButtonSample.class));
         return samples;
     }
 }

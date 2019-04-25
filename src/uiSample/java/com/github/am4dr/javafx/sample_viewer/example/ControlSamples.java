@@ -1,7 +1,6 @@
 package com.github.am4dr.javafx.sample_viewer.example;
 
 import com.github.am4dr.javafx.sample_viewer.NodeLatestInstanceBinding;
-import com.github.am4dr.javafx.sample_viewer.UpdateAwareNode;
 import com.github.am4dr.javafx.sample_viewer.ui.SampleApplicationSupport;
 import com.github.am4dr.javafx.sample_viewer.ui.SampleCollection;
 import com.github.am4dr.javafx.sample_viewer.ui.SampleCollectionViewer;
@@ -23,11 +22,11 @@ public final class ControlSamples extends SampleApplicationSupport {
     private SampleCollection createSamples() {
         final SampleCollection samples = new SampleCollection();
         samples.addSample("empty SampleViewer.View", new SampleCollectionViewer.View());
-        samples.addSample("SampleViewerSample by Class<T> class", new NodeLatestInstanceBinding(this::createWatcher, SampleViewerSample.class));
-        samples.addSample("SampleViewerSample by class name", new NodeLatestInstanceBinding(this::createWatcher, SampleViewerSample.class.getName()));
+        samples.addSample("SampleViewerSample by Class<T> class", new NodeLatestInstanceBinding(this::createClassLoader, SampleViewerSample.class));
+        samples.addSample("SampleViewerSample by class name", new NodeLatestInstanceBinding(this::createClassLoader, SampleViewerSample.class.getName()));
         samples.addSample("BorderLayer", new StatusBorderedPane.BorderLayer());
-        samples.addSample("StatusBorderedPane(OK)", new StatusBorderedPane(new NodeLatestInstanceBinding(this::createWatcher, Pane.class)));
-        samples.addSample("StatusBorderedPane(ERROR)", new StatusBorderedPane(new NodeLatestInstanceBinding(this::createWatcher, "NotFound")));
+        samples.addSample("StatusBorderedPane(OK)", new StatusBorderedPane(new NodeLatestInstanceBinding(this::createClassLoader, Pane.class)));
+        samples.addSample("StatusBorderedPane(ERROR)", new StatusBorderedPane(new NodeLatestInstanceBinding(this::createClassLoader, "NotFound")));
         return samples;
     }
 }

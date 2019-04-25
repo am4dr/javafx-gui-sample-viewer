@@ -1,7 +1,10 @@
 package com.github.am4dr.javafx.sample_viewer.ui;
 
+import com.github.am4dr.javafx.sample_viewer.NodeLatestInstanceBinding;
+import com.github.am4dr.javafx.sample_viewer.ReportingClassLoader;
 import com.github.am4dr.javafx.sample_viewer.UpdateAwareURLClassLoader;
 import javafx.application.Application;
+import javafx.scene.Node;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -24,6 +27,12 @@ public abstract class SampleApplicationSupport extends Application {
         paths = parseToPathList(getParameters().getNamed().get(PATH_PARAM_NAME));
         loadOnlyPaths = parseToPathList(getParameters().getNamed().get(LOAD_ONLY_PATH_PARAM_NAME));
     }
+
+    protected ReportingClassLoader createClassLoader() {
+        return new UpdateAwareURLClassLoader(paths, loadOnlyPaths);
+    }
+
+    @Deprecated(forRemoval = true, since = "0.5")
     protected UpdateAwareURLClassLoader createWatcher() {
         return new UpdateAwareURLClassLoader(paths, loadOnlyPaths);
     }
@@ -31,7 +40,17 @@ public abstract class SampleApplicationSupport extends Application {
     private static List<Path> parseToPathList(String paths) {
         if (paths == null) return List.of();
         return Arrays.stream(paths.split(File.pathSeparator))
-                .map(Paths::get).distinct().collect(Collectors.toList());
+                .map(Paths::get)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    protected NodeLatestInstanceBinding createNodeBinding(Class<? extends Node> clazz) {
+        return createNodeBinding(clazz.getName());
+    }
+
+    protected NodeLatestInstanceBinding createNodeBinding(String name) {
+        return new NodeLatestInstanceBinding(this::createClassLoader, name);
     }
 
 
